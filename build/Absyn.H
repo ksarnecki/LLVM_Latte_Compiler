@@ -25,7 +25,7 @@ class Arg;
 class Block;
 class Stmt;
 class Item;
-class Type;
+class LatteType;
 class Expr;
 class AddOp;
 class MulOp;
@@ -46,12 +46,12 @@ class Ret;
 class VRet;
 class Cond;
 class CondElse;
-class While;
+class WhileStmnt;
 class SExp;
-class Int;
-class Str;
-class Bool;
-class Void;
+class IntType;
+class StrType;
+class BoolType;
+class VoidType;
 class Fun;
 class EVar;
 class ELitInt;
@@ -60,7 +60,7 @@ class ELitFalse;
 class EApp;
 class EString;
 class Neg;
-class Not;
+class Nott;
 class EMul;
 class EAdd;
 class ERel;
@@ -81,7 +81,7 @@ class ListTopDef;
 class ListArg;
 class ListStmt;
 class ListItem;
-class ListType;
+class ListLatteType;
 class ListExpr;
 
 
@@ -96,7 +96,7 @@ public:
   virtual void visitBlock(Block *p) = 0;
   virtual void visitStmt(Stmt *p) = 0;
   virtual void visitItem(Item *p) = 0;
-  virtual void visitType(Type *p) = 0;
+  virtual void visitLatteType(LatteType *p) = 0;
   virtual void visitExpr(Expr *p) = 0;
   virtual void visitAddOp(AddOp *p) = 0;
   virtual void visitMulOp(MulOp *p) = 0;
@@ -117,12 +117,12 @@ public:
   virtual void visitVRet(VRet *p) = 0;
   virtual void visitCond(Cond *p) = 0;
   virtual void visitCondElse(CondElse *p) = 0;
-  virtual void visitWhile(While *p) = 0;
+  virtual void visitWhileStmnt(WhileStmnt *p) = 0;
   virtual void visitSExp(SExp *p) = 0;
-  virtual void visitInt(Int *p) = 0;
-  virtual void visitStr(Str *p) = 0;
-  virtual void visitBool(Bool *p) = 0;
-  virtual void visitVoid(Void *p) = 0;
+  virtual void visitIntType(IntType *p) = 0;
+  virtual void visitStrType(StrType *p) = 0;
+  virtual void visitBoolType(BoolType *p) = 0;
+  virtual void visitVoidType(VoidType *p) = 0;
   virtual void visitFun(Fun *p) = 0;
   virtual void visitEVar(EVar *p) = 0;
   virtual void visitELitInt(ELitInt *p) = 0;
@@ -131,7 +131,7 @@ public:
   virtual void visitEApp(EApp *p) = 0;
   virtual void visitEString(EString *p) = 0;
   virtual void visitNeg(Neg *p) = 0;
-  virtual void visitNot(Not *p) = 0;
+  virtual void visitNott(Nott *p) = 0;
   virtual void visitEMul(EMul *p) = 0;
   virtual void visitEAdd(EAdd *p) = 0;
   virtual void visitERel(ERel *p) = 0;
@@ -152,7 +152,7 @@ public:
   virtual void visitListArg(ListArg *p) = 0;
   virtual void visitListStmt(ListStmt *p) = 0;
   virtual void visitListItem(ListItem *p) = 0;
-  virtual void visitListType(ListType *p) = 0;
+  virtual void visitListLatteType(ListLatteType *p) = 0;
   virtual void visitListExpr(ListExpr *p) = 0;
 
 
@@ -179,77 +179,77 @@ class Program : public Visitable
 {
 public:
   virtual Program *clone() const = 0;
-
+  int line_number;
 };
 
 class TopDef : public Visitable
 {
 public:
   virtual TopDef *clone() const = 0;
-
+  int line_number;
 };
 
 class Arg : public Visitable
 {
 public:
   virtual Arg *clone() const = 0;
-
+  int line_number;
 };
 
 class Block : public Visitable
 {
 public:
   virtual Block *clone() const = 0;
-
+  int line_number;
 };
 
 class Stmt : public Visitable
 {
 public:
   virtual Stmt *clone() const = 0;
-
+  int line_number;
 };
 
 class Item : public Visitable
 {
 public:
   virtual Item *clone() const = 0;
-
+  int line_number;
 };
 
-class Type : public Visitable
+class LatteType : public Visitable
 {
 public:
-  virtual Type *clone() const = 0;
-
+  virtual LatteType *clone() const = 0;
+  int line_number;
 };
 
 class Expr : public Visitable
 {
 public:
   virtual Expr *clone() const = 0;
-
+  int line_number;
 };
 
 class AddOp : public Visitable
 {
 public:
   virtual AddOp *clone() const = 0;
-
+  int line_number;
 };
 
 class MulOp : public Visitable
 {
 public:
   virtual MulOp *clone() const = 0;
-
+  int line_number;
 };
 
 class RelOp : public Visitable
 {
 public:
   virtual RelOp *clone() const = 0;
-
+  int line_number;
 };
 
 
@@ -271,14 +271,14 @@ public:
 class FnDef : public TopDef
 {
 public:
-  Type *type_;
+  LatteType *lattetype_;
   Ident ident_;
   ListArg *listarg_;
   Block *block_;
 
   FnDef(const FnDef &);
   FnDef &operator=(const FnDef &);
-  FnDef(Type *p1, Ident p2, ListArg *p3, Block *p4);
+  FnDef(LatteType *p1, Ident p2, ListArg *p3, Block *p4);
   ~FnDef();
   virtual void accept(Visitor *v);
   virtual FnDef *clone() const;
@@ -288,12 +288,12 @@ public:
 class Ar : public Arg
 {
 public:
-  Type *type_;
+  LatteType *lattetype_;
   Ident ident_;
 
   Ar(const Ar &);
   Ar &operator=(const Ar &);
-  Ar(Type *p1, Ident p2);
+  Ar(LatteType *p1, Ident p2);
   ~Ar();
   virtual void accept(Visitor *v);
   virtual Ar *clone() const;
@@ -344,12 +344,12 @@ public:
 class Decl : public Stmt
 {
 public:
-  Type *type_;
+  LatteType *lattetype_;
   ListItem *listitem_;
 
   Decl(const Decl &);
   Decl &operator=(const Decl &);
-  Decl(Type *p1, ListItem *p2);
+  Decl(LatteType *p1, ListItem *p2);
   ~Decl();
   virtual void accept(Visitor *v);
   virtual Decl *clone() const;
@@ -457,19 +457,19 @@ public:
   void swap(CondElse &);
 };
 
-class While : public Stmt
+class WhileStmnt : public Stmt
 {
 public:
   Expr *expr_;
   Stmt *stmt_;
 
-  While(const While &);
-  While &operator=(const While &);
-  While(Expr *p1, Stmt *p2);
-  ~While();
+  WhileStmnt(const WhileStmnt &);
+  WhileStmnt &operator=(const WhileStmnt &);
+  WhileStmnt(Expr *p1, Stmt *p2);
+  ~WhileStmnt();
   virtual void accept(Visitor *v);
-  virtual While *clone() const;
-  void swap(While &);
+  virtual WhileStmnt *clone() const;
+  void swap(WhileStmnt &);
 };
 
 class SExp : public Stmt
@@ -515,67 +515,67 @@ public:
   void swap(Init &);
 };
 
-class Int : public Type
+class IntType : public LatteType
 {
 public:
 
-  Int(const Int &);
-  Int &operator=(const Int &);
-  Int();
-  ~Int();
+  IntType(const IntType &);
+  IntType &operator=(const IntType &);
+  IntType();
+  ~IntType();
   virtual void accept(Visitor *v);
-  virtual Int *clone() const;
-  void swap(Int &);
+  virtual IntType *clone() const;
+  void swap(IntType &);
 };
 
-class Str : public Type
+class StrType : public LatteType
 {
 public:
 
-  Str(const Str &);
-  Str &operator=(const Str &);
-  Str();
-  ~Str();
+  StrType(const StrType &);
+  StrType &operator=(const StrType &);
+  StrType();
+  ~StrType();
   virtual void accept(Visitor *v);
-  virtual Str *clone() const;
-  void swap(Str &);
+  virtual StrType *clone() const;
+  void swap(StrType &);
 };
 
-class Bool : public Type
+class BoolType : public LatteType
 {
 public:
 
-  Bool(const Bool &);
-  Bool &operator=(const Bool &);
-  Bool();
-  ~Bool();
+  BoolType(const BoolType &);
+  BoolType &operator=(const BoolType &);
+  BoolType();
+  ~BoolType();
   virtual void accept(Visitor *v);
-  virtual Bool *clone() const;
-  void swap(Bool &);
+  virtual BoolType *clone() const;
+  void swap(BoolType &);
 };
 
-class Void : public Type
+class VoidType : public LatteType
 {
 public:
 
-  Void(const Void &);
-  Void &operator=(const Void &);
-  Void();
-  ~Void();
+  VoidType(const VoidType &);
+  VoidType &operator=(const VoidType &);
+  VoidType();
+  ~VoidType();
   virtual void accept(Visitor *v);
-  virtual Void *clone() const;
-  void swap(Void &);
+  virtual VoidType *clone() const;
+  void swap(VoidType &);
 };
 
-class Fun : public Type
+class Fun : public LatteType
 {
 public:
-  Type *type_;
-  ListType *listtype_;
+  LatteType *lattetype_;
+  ListLatteType *listlattetype_;
 
   Fun(const Fun &);
   Fun &operator=(const Fun &);
-  Fun(Type *p1, ListType *p2);
+  Fun(LatteType *p1, ListLatteType *p2);
   ~Fun();
   virtual void accept(Visitor *v);
   virtual Fun *clone() const;
@@ -679,18 +679,18 @@ public:
   void swap(Neg &);
 };
 
-class Not : public Expr
+class Nott : public Expr
 {
 public:
   Expr *expr_;
 
-  Not(const Not &);
-  Not &operator=(const Not &);
-  Not(Expr *p1);
-  ~Not();
+  Nott(const Nott &);
+  Nott &operator=(const Nott &);
+  Nott(Expr *p1);
+  ~Nott();
   virtual void accept(Visitor *v);
-  virtual Not *clone() const;
-  void swap(Not &);
+  virtual Nott *clone() const;
+  void swap(Nott &);
 };
 
 class EMul : public Expr
@@ -944,11 +944,11 @@ public:
   virtual ListItem *clone() const;
 };
 
-class ListType : public Visitable, public std::vector<Type*>
+class ListLatteType : public Visitable, public std::vector<LatteType*>
 {
 public:
   virtual void accept(Visitor *v);
-  virtual ListType *clone() const;
+  virtual ListLatteType *clone() const;
 };
 
 class ListExpr : public Visitable, public std::vector<Expr*>

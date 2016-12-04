@@ -1,5 +1,5 @@
-#include "LLVMProgramPrinter.h"
-
+#include "Printer.h"
+/*
 void LLVMProgramPrinter::print(const LLVMProgram& program) {
   AnsiString outString;
   outString += "declare void @printInt(i32);\n";
@@ -65,3 +65,4 @@ AnsiString LLVMProgramPrinter::renderRegister(const Register& r) {
   }
   throw Exception("[LLVMProgramPrinter::renderRegister] Unknown register type!");
 }
+*/

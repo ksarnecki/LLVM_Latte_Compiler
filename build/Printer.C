@@ -117,7 +117,7 @@ void PrintAbsyn::visitFnDef(FnDef* p)
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
 
-  _i_ = 0; p->type_->accept(this);
+  _i_ = 0; p->lattetype_->accept(this);
   visitIdent(p->ident_);
   render('(');
   if(p->listarg_) {_i_ = 0; p->listarg_->accept(this);}  render(')');
@@ -144,7 +144,7 @@ void PrintAbsyn::visitAr(Ar* p)
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
 
-  _i_ = 0; p->type_->accept(this);
+  _i_ = 0; p->lattetype_->accept(this);
   visitIdent(p->ident_);
 
   if (oldi > 0) render(_R_PAREN);
@@ -216,7 +216,7 @@ void PrintAbsyn::visitDecl(Decl* p)
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
 
-  _i_ = 0; p->type_->accept(this);
+  _i_ = 0; p->lattetype_->accept(this);
   if(p->listitem_) {_i_ = 0; p->listitem_->accept(this);}  render(';');
 
   if (oldi > 0) render(_R_PAREN);
@@ -328,7 +328,7 @@ void PrintAbsyn::visitCondElse(CondElse* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitWhile(While* p)
+void PrintAbsyn::visitWhileStmnt(WhileStmnt* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -394,9 +394,9 @@ void PrintAbsyn::visitListItem(ListItem *listitem)
   }
 }
 
-void PrintAbsyn::visitType(Type*p) {} //abstract class
+void PrintAbsyn::visitLatteType(LatteType*p) {} //abstract class
 
-void PrintAbsyn::visitInt(Int* p)
+void PrintAbsyn::visitIntType(IntType* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -408,7 +408,7 @@ void PrintAbsyn::visitInt(Int* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitStr(Str* p)
+void PrintAbsyn::visitStrType(StrType* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -420,7 +420,7 @@ void PrintAbsyn::visitStr(Str* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitBool(Bool* p)
+void PrintAbsyn::visitBoolType(BoolType* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -432,7 +432,7 @@ void PrintAbsyn::visitBool(Bool* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitVoid(Void* p)
+void PrintAbsyn::visitVoidType(VoidType* p)
 {
   int oldi = _i_;
   if (oldi > 0) render(_L_PAREN);
@@ -451,21 +451,21 @@ void PrintAbsyn::visitFun(Fun* p)
 
   /* Internal Category */
 
-  _i_ = 0; p->type_->accept(this);
+  _i_ = 0; p->lattetype_->accept(this);
   render('(');
-  if(p->listtype_) {_i_ = 0; p->listtype_->accept(this);}  render(')');
+  if(p->listlattetype_) {_i_ = 0; p->listlattetype_->accept(this);}  render(')');
 
   if (oldi > 0) render(_R_PAREN);
 
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitListType(ListType *listtype)
+void PrintAbsyn::visitListLatteType(ListLatteType *listlattetype)
 {
-  for (ListType::const_iterator i = listtype->begin() ; i != listtype->end() ; ++i)
+  for (ListLatteType::const_iterator i = listlattetype->begin() ; i != listlattetype->end() ; ++i)
   {
     (*i)->accept(this);
-    if (i != listtype->end() - 1) render(',');
+    if (i != listlattetype->end() - 1) render(',');
   }
 }
 
@@ -558,7 +558,7 @@ void PrintAbsyn::visitNeg(Neg* p)
   _i_ = oldi;
 }
 
-void PrintAbsyn::visitNot(Not* p)
+void PrintAbsyn::visitNott(Nott* p)
 {
   int oldi = _i_;
   if (oldi > 5) render(_L_PAREN);
@@ -855,7 +855,7 @@ void ShowAbsyn::visitFnDef(FnDef* p)
   bufAppend("FnDef");
   bufAppend(' ');
   bufAppend('[');
-  if (p->type_)  p->type_->accept(this);
+  if (p->lattetype_)  p->lattetype_->accept(this);
   bufAppend(']');
   bufAppend(' ');
   visitIdent(p->ident_);
@@ -886,7 +886,7 @@ void ShowAbsyn::visitAr(Ar* p)
   bufAppend("Ar");
   bufAppend(' ');
   bufAppend('[');
-  if (p->type_)  p->type_->accept(this);
+  if (p->lattetype_)  p->lattetype_->accept(this);
   bufAppend(']');
   bufAppend(' ');
   visitIdent(p->ident_);
@@ -945,7 +945,7 @@ void ShowAbsyn::visitDecl(Decl* p)
   bufAppend("Decl");
   bufAppend(' ');
   bufAppend('[');
-  if (p->type_)  p->type_->accept(this);
+  if (p->lattetype_)  p->lattetype_->accept(this);
   bufAppend(']');
   bufAppend(' ');
   bufAppend('[');
@@ -1028,10 +1028,10 @@ void ShowAbsyn::visitCondElse(CondElse* p)
   p->stmt_2->accept(this);
   bufAppend(')');
 }
-void ShowAbsyn::visitWhile(While* p)
+void ShowAbsyn::visitWhileStmnt(WhileStmnt* p)
 {
   bufAppend('(');
-  bufAppend("While");
+  bufAppend("WhileStmnt");
   bufAppend(' ');
   bufAppend('[');
   if (p->expr_)  p->expr_->accept(this);
@@ -1084,23 +1084,23 @@ void ShowAbsyn::visitListItem(ListItem *listitem)
   }
 }
 
-void ShowAbsyn::visitType(Type* p) {} //abstract class
+void ShowAbsyn::visitLatteType(LatteType* p) {} //abstract class
 
-void ShowAbsyn::visitInt(Int* p)
+void ShowAbsyn::visitIntType(IntType* p)
 {
-  bufAppend("Int");
+  bufAppend("IntType");
 }
-void ShowAbsyn::visitStr(Str* p)
+void ShowAbsyn::visitStrType(StrType* p)
 {
-  bufAppend("Str");
+  bufAppend("StrType");
 }
-void ShowAbsyn::visitBool(Bool* p)
+void ShowAbsyn::visitBoolType(BoolType* p)
 {
-  bufAppend("Bool");
+  bufAppend("BoolType");
 }
-void ShowAbsyn::visitVoid(Void* p)
+void ShowAbsyn::visitVoidType(VoidType* p)
 {
-  bufAppend("Void");
+  bufAppend("VoidType");
 }
 void ShowAbsyn::visitFun(Fun* p)
 {
@@ -1110,21 +1110,21 @@ void ShowAbsyn::visitFun(Fun* p)
 /* Internal Category */
   bufAppend(' ');
   bufAppend('[');
-  if (p->type_)  p->type_->accept(this);
+  if (p->lattetype_)  p->lattetype_->accept(this);
   bufAppend(']');
   bufAppend(' ');
   bufAppend('[');
-  if (p->listtype_)  p->listtype_->accept(this);
+  if (p->listlattetype_)  p->listlattetype_->accept(this);
   bufAppend(']');
   bufAppend(' ');
   bufAppend(')');
 }
-void ShowAbsyn::visitListType(ListType *listtype)
+void ShowAbsyn::visitListLatteType(ListLatteType *listlattetype)
 {
-  for (ListType::const_iterator i = listtype->begin() ; i != listtype->end() ; ++i)
+  for (ListLatteType::const_iterator i = listlattetype->begin() ; i != listlattetype->end() ; ++i)
   {
     (*i)->accept(this);
-    if (i != listtype->end() - 1) bufAppend(", ");
+    if (i != listlattetype->end() - 1) bufAppend(", ");
   }
 }
 
@@ -1185,10 +1185,10 @@ void ShowAbsyn::visitNeg(Neg* p)
   bufAppend(']');
   bufAppend(')');
 }
-void ShowAbsyn::visitNot(Not* p)
+void ShowAbsyn::visitNott(Nott* p)
 {
   bufAppend('(');
-  bufAppend("Not");
+  bufAppend("Nott");
   bufAppend(' ');
   bufAppend('[');
   if (p->expr_)  p->expr_->accept(this);

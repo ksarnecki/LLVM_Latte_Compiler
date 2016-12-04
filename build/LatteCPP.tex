@@ -78,7 +78,7 @@ All other symbols are terminals.\\
 \end{tabular}\\
 
 \begin{tabular}{lll}
-{\nonterminal{TopDef}} & {\arrow}  &{\nonterminal{Type}} {\nonterminal{Ident}} {\terminal{(}} {\nonterminal{ListArg}} {\terminal{)}} {\nonterminal{Block}}  \\
+{\nonterminal{TopDef}} & {\arrow}  &{\nonterminal{LatteType}} {\nonterminal{Ident}} {\terminal{(}} {\nonterminal{ListArg}} {\terminal{)}} {\nonterminal{Block}}  \\
 \end{tabular}\\
 
 \begin{tabular}{lll}
@@ -87,7 +87,7 @@ All other symbols are terminals.\\
 \end{tabular}\\
 
 \begin{tabular}{lll}
-{\nonterminal{Arg}} & {\arrow}  &{\nonterminal{Type}} {\nonterminal{Ident}}  \\
+{\nonterminal{Arg}} & {\arrow}  &{\nonterminal{LatteType}} {\nonterminal{Ident}}  \\
 \end{tabular}\\
 
 \begin{tabular}{lll}
@@ -108,7 +108,7 @@ All other symbols are terminals.\\
 \begin{tabular}{lll}
 {\nonterminal{Stmt}} & {\arrow}  &{\terminal{;}}  \\
  & {\delimit}  &{\nonterminal{Block}}  \\
- & {\delimit}  &{\nonterminal{Type}} {\nonterminal{ListItem}} {\terminal{;}}  \\
+ & {\delimit}  &{\nonterminal{LatteType}} {\nonterminal{ListItem}} {\terminal{;}}  \\
  & {\delimit}  &{\nonterminal{Ident}} {\terminal{{$=$}}} {\nonterminal{Expr}} {\terminal{;}}  \\
  & {\delimit}  &{\nonterminal{Ident}} {\terminal{{$+$}{$+$}}} {\terminal{;}}  \\
  & {\delimit}  &{\nonterminal{Ident}} {\terminal{{$-$}{$-$}}} {\terminal{;}}  \\
@@ -131,16 +131,16 @@ All other symbols are terminals.\\
 \end{tabular}\\
 
 \begin{tabular}{lll}
-{\nonterminal{Type}} & {\arrow}  &{\terminal{int}}  \\
+{\nonterminal{LatteType}} & {\arrow}  &{\terminal{int}}  \\
  & {\delimit}  &{\terminal{string}}  \\
  & {\delimit}  &{\terminal{boolean}}  \\
  & {\delimit}  &{\terminal{void}}  \\
 \end{tabular}\\
 
 \begin{tabular}{lll}
-{\nonterminal{ListType}} & {\arrow}  &{\emptyP} \\
- & {\delimit}  &{\nonterminal{Type}}  \\
- & {\delimit}  &{\nonterminal{Type}} {\terminal{,}} {\nonterminal{ListType}}  \\
+{\nonterminal{ListLatteType}} & {\arrow}  &{\emptyP} \\
+ & {\delimit}  &{\nonterminal{LatteType}}  \\
+ & {\delimit}  &{\nonterminal{LatteType}} {\terminal{,}} {\nonterminal{ListLatteType}}  \\
 \end{tabular}\\
 
 \begin{tabular}{lll}

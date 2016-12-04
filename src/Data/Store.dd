@@ -1,0 +1,19 @@
+Store
+cpp
+
+int
+basic
+
+string 
+basic
+
+Type
+external
+Types.h
+
+StoreElement = record {
+  id : int,
+  type : Type	
+}
+
+Store = array of StoreElement

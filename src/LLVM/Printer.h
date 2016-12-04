@@ -1,6 +1,6 @@
 #ifndef LLVM_PROGRAM_PRINTER
 #define LLVM_PROGRAM_PRINTER
-
+/*
 #include "LLVMData.h"
 #include <cstdio>
 
@@ -14,5 +14,5 @@ private:
 public:
   static void print(const LLVMProgram&);
 };
-
+*/
 #endif

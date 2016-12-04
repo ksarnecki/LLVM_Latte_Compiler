@@ -14,7 +14,7 @@ public:
   void visitBlock(Block* p);
   void visitStmt(Stmt* p);
   void visitItem(Item* p);
-  void visitType(Type* p);
+  void visitLatteType(LatteType* p);
   void visitExpr(Expr* p);
   void visitAddOp(AddOp* p);
   void visitMulOp(MulOp* p);
@@ -35,12 +35,12 @@ public:
   void visitVRet(VRet* p);
   void visitCond(Cond* p);
   void visitCondElse(CondElse* p);
-  void visitWhile(While* p);
+  void visitWhileStmnt(WhileStmnt* p);
   void visitSExp(SExp* p);
-  void visitInt(Int* p);
-  void visitStr(Str* p);
-  void visitBool(Bool* p);
-  void visitVoid(Void* p);
+  void visitIntType(IntType* p);
+  void visitStrType(StrType* p);
+  void visitBoolType(BoolType* p);
+  void visitVoidType(VoidType* p);
   void visitFun(Fun* p);
   void visitEVar(EVar* p);
   void visitELitInt(ELitInt* p);
@@ -49,7 +49,7 @@ public:
   void visitEApp(EApp* p);
   void visitEString(EString* p);
   void visitNeg(Neg* p);
-  void visitNot(Not* p);
+  void visitNott(Nott* p);
   void visitEMul(EMul* p);
   void visitEAdd(EAdd* p);
   void visitERel(ERel* p);
@@ -70,7 +70,7 @@ public:
   void visitListArg(ListArg* p);
   void visitListStmt(ListStmt* p);
   void visitListItem(ListItem* p);
-  void visitListType(ListType* p);
+  void visitListLatteType(ListLatteType* p);
   void visitListExpr(ListExpr* p);
 
   void visitInteger(Integer x);

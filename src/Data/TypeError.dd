@@ -1,0 +1,15 @@
+TypeError
+cpp
+
+int 
+basic
+
+string
+basic
+
+TypeError = record {
+	line : int,
+	msg : string
+}
+
+TypeErrors = array of TypeError

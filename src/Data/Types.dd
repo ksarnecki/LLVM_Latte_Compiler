@@ -1,0 +1,34 @@
+Types
+cpp
+
+int
+basic
+
+string 
+basic
+
+TypeArray = array of Type
+
+BasicTypeArray = array of BasicType
+
+FunctionTypeArray = array of FunctionType
+
+Type = variant {
+  basic : BasicType,
+  function : FunctionType,
+  null
+}
+
+BasicType = variant {
+  int,
+  bool,
+  double,
+  char,
+  string,
+  void
+}
+
+FunctionType = record {
+  returnType : Type,
+  args : TypeArray
+}

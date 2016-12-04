@@ -50,9 +50,9 @@ Prog *Prog::clone() const
 
 
 /********************   FnDef    ********************/
-FnDef::FnDef(Type *p1, Ident p2, ListArg *p3, Block *p4)
+FnDef::FnDef(LatteType *p1, Ident p2, ListArg *p3, Block *p4)
 {
-  type_ = p1;
+  lattetype_ = p1;
   ident_ = p2;
   listarg_ = p3;
   block_ = p4;
@@ -61,7 +61,7 @@ FnDef::FnDef(Type *p1, Ident p2, ListArg *p3, Block *p4)
 
 FnDef::FnDef(const FnDef & other)
 {
-  type_ = other.type_->clone();
+  lattetype_ = other.lattetype_->clone();
   ident_ = other.ident_;
   listarg_ = other.listarg_->clone();
   block_ = other.block_->clone();
@@ -77,7 +77,7 @@ FnDef &FnDef::operator=(const FnDef & other)
 
 void FnDef::swap(FnDef & other)
 {
-  std::swap(type_, other.type_);
+  std::swap(lattetype_, other.lattetype_);
   std::swap(ident_, other.ident_);
   std::swap(listarg_, other.listarg_);
   std::swap(block_, other.block_);
@@ -86,7 +86,7 @@ void FnDef::swap(FnDef & other)
 
 FnDef::~FnDef()
 {
-  delete(type_);
+  delete(lattetype_);
   delete(listarg_);
   delete(block_);
 
@@ -105,16 +105,16 @@ FnDef *FnDef::clone() const
 
 
 /********************   Ar    ********************/
-Ar::Ar(Type *p1, Ident p2)
+Ar::Ar(LatteType *p1, Ident p2)
 {
-  type_ = p1;
+  lattetype_ = p1;
   ident_ = p2;
 
 }
 
 Ar::Ar(const Ar & other)
 {
-  type_ = other.type_->clone();
+  lattetype_ = other.lattetype_->clone();
   ident_ = other.ident_;
 
 }
@@ -128,14 +128,14 @@ Ar &Ar::operator=(const Ar & other)
 
 void Ar::swap(Ar & other)
 {
-  std::swap(type_, other.type_);
+  std::swap(lattetype_, other.lattetype_);
   std::swap(ident_, other.ident_);
 
 }
 
 Ar::~Ar()
 {
-  delete(type_);
+  delete(lattetype_);
 
 }
 
@@ -280,16 +280,16 @@ BStmt *BStmt::clone() const
 
 
 /********************   Decl    ********************/
-Decl::Decl(Type *p1, ListItem *p2)
+Decl::Decl(LatteType *p1, ListItem *p2)
 {
-  type_ = p1;
+  lattetype_ = p1;
   listitem_ = p2;
 
 }
 
 Decl::Decl(const Decl & other)
 {
-  type_ = other.type_->clone();
+  lattetype_ = other.lattetype_->clone();
   listitem_ = other.listitem_->clone();
 
 }
@@ -303,14 +303,14 @@ Decl &Decl::operator=(const Decl & other)
 
 void Decl::swap(Decl & other)
 {
-  std::swap(type_, other.type_);
+  std::swap(lattetype_, other.lattetype_);
   std::swap(listitem_, other.listitem_);
 
 }
 
 Decl::~Decl()
 {
-  delete(type_);
+  delete(lattetype_);
   delete(listitem_);
 
 }
@@ -644,50 +644,50 @@ CondElse *CondElse::clone() const
 
 
 
-/********************   While    ********************/
-While::While(Expr *p1, Stmt *p2)
+/********************   WhileStmnt    ********************/
+WhileStmnt::WhileStmnt(Expr *p1, Stmt *p2)
 {
   expr_ = p1;
   stmt_ = p2;
 
 }
 
-While::While(const While & other)
+WhileStmnt::WhileStmnt(const WhileStmnt & other)
 {
   expr_ = other.expr_->clone();
   stmt_ = other.stmt_->clone();
 
 }
 
-While &While::operator=(const While & other)
+WhileStmnt &WhileStmnt::operator=(const WhileStmnt & other)
 {
-  While tmp(other);
+  WhileStmnt tmp(other);
   swap(tmp);
   return *this;
 }
 
-void While::swap(While & other)
+void WhileStmnt::swap(WhileStmnt & other)
 {
   std::swap(expr_, other.expr_);
   std::swap(stmt_, other.stmt_);
 
 }
 
-While::~While()
+WhileStmnt::~WhileStmnt()
 {
   delete(expr_);
   delete(stmt_);
 
 }
 
-void While::accept(Visitor *v)
+void WhileStmnt::accept(Visitor *v)
 {
-  v->visitWhile(this);
+  v->visitWhileStmnt(this);
 }
 
-While *While::clone() const
+WhileStmnt *WhileStmnt::clone() const
 {
-  return new While(*this);
+  return new WhileStmnt(*this);
 }
 
 
@@ -826,178 +826,178 @@ Init *Init::clone() const
 
 
 
-/********************   Int    ********************/
-Int::Int()
+/********************   IntType    ********************/
+IntType::IntType()
 {
 
 }
 
-Int::Int(const Int & other)
+IntType::IntType(const IntType & other)
 {
 
 }
 
-Int &Int::operator=(const Int & other)
+IntType &IntType::operator=(const IntType & other)
 {
-  Int tmp(other);
+  IntType tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Int::swap(Int & other)
+void IntType::swap(IntType & other)
 {
 
 }
 
-Int::~Int()
+IntType::~IntType()
 {
 
 }
 
-void Int::accept(Visitor *v)
+void IntType::accept(Visitor *v)
 {
-  v->visitInt(this);
+  v->visitIntType(this);
 }
 
-Int *Int::clone() const
+IntType *IntType::clone() const
 {
-  return new Int(*this);
+  return new IntType(*this);
 }
 
 
 
-/********************   Str    ********************/
-Str::Str()
-{
-
-}
-
-Str::Str(const Str & other)
+/********************   StrType    ********************/
+StrType::StrType()
 {
 
 }
 
-Str &Str::operator=(const Str & other)
+StrType::StrType(const StrType & other)
 {
-  Str tmp(other);
+
+}
+
+StrType &StrType::operator=(const StrType & other)
+{
+  StrType tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Str::swap(Str & other)
+void StrType::swap(StrType & other)
 {
 
 }
 
-Str::~Str()
+StrType::~StrType()
 {
 
 }
 
-void Str::accept(Visitor *v)
+void StrType::accept(Visitor *v)
 {
-  v->visitStr(this);
+  v->visitStrType(this);
 }
 
-Str *Str::clone() const
+StrType *StrType::clone() const
 {
-  return new Str(*this);
+  return new StrType(*this);
 }
 
 
 
-/********************   Bool    ********************/
-Bool::Bool()
-{
-
-}
-
-Bool::Bool(const Bool & other)
+/********************   BoolType    ********************/
+BoolType::BoolType()
 {
 
 }
 
-Bool &Bool::operator=(const Bool & other)
+BoolType::BoolType(const BoolType & other)
 {
-  Bool tmp(other);
+
+}
+
+BoolType &BoolType::operator=(const BoolType & other)
+{
+  BoolType tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Bool::swap(Bool & other)
+void BoolType::swap(BoolType & other)
 {
 
 }
 
-Bool::~Bool()
+BoolType::~BoolType()
 {
 
 }
 
-void Bool::accept(Visitor *v)
+void BoolType::accept(Visitor *v)
 {
-  v->visitBool(this);
+  v->visitBoolType(this);
 }
 
-Bool *Bool::clone() const
+BoolType *BoolType::clone() const
 {
-  return new Bool(*this);
+  return new BoolType(*this);
 }
 
 
 
-/********************   Void    ********************/
-Void::Void()
-{
-
-}
-
-Void::Void(const Void & other)
+/********************   VoidType    ********************/
+VoidType::VoidType()
 {
 
 }
 
-Void &Void::operator=(const Void & other)
+VoidType::VoidType(const VoidType & other)
 {
-  Void tmp(other);
+
+}
+
+VoidType &VoidType::operator=(const VoidType & other)
+{
+  VoidType tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Void::swap(Void & other)
+void VoidType::swap(VoidType & other)
 {
 
 }
 
-Void::~Void()
+VoidType::~VoidType()
 {
 
 }
 
-void Void::accept(Visitor *v)
+void VoidType::accept(Visitor *v)
 {
-  v->visitVoid(this);
+  v->visitVoidType(this);
 }
 
-Void *Void::clone() const
+VoidType *VoidType::clone() const
 {
-  return new Void(*this);
+  return new VoidType(*this);
 }
 
 
 
 /********************   Fun    ********************/
-Fun::Fun(Type *p1, ListType *p2)
+Fun::Fun(LatteType *p1, ListLatteType *p2)
 {
-  type_ = p1;
-  listtype_ = p2;
+  lattetype_ = p1;
+  listlattetype_ = p2;
 
 }
 
 Fun::Fun(const Fun & other)
 {
-  type_ = other.type_->clone();
-  listtype_ = other.listtype_->clone();
+  lattetype_ = other.lattetype_->clone();
+  listlattetype_ = other.listlattetype_->clone();
 
 }
 
@@ -1010,15 +1010,15 @@ Fun &Fun::operator=(const Fun & other)
 
 void Fun::swap(Fun & other)
 {
-  std::swap(type_, other.type_);
-  std::swap(listtype_, other.listtype_);
+  std::swap(lattetype_, other.lattetype_);
+  std::swap(listlattetype_, other.listlattetype_);
 
 }
 
 Fun::~Fun()
 {
-  delete(type_);
-  delete(listtype_);
+  delete(lattetype_);
+  delete(listlattetype_);
 
 }
 
@@ -1334,46 +1334,46 @@ Neg *Neg::clone() const
 
 
 
-/********************   Not    ********************/
-Not::Not(Expr *p1)
+/********************   Nott    ********************/
+Nott::Nott(Expr *p1)
 {
   expr_ = p1;
 
 }
 
-Not::Not(const Not & other)
+Nott::Nott(const Nott & other)
 {
   expr_ = other.expr_->clone();
 
 }
 
-Not &Not::operator=(const Not & other)
+Nott &Nott::operator=(const Nott & other)
 {
-  Not tmp(other);
+  Nott tmp(other);
   swap(tmp);
   return *this;
 }
 
-void Not::swap(Not & other)
+void Nott::swap(Nott & other)
 {
   std::swap(expr_, other.expr_);
 
 }
 
-Not::~Not()
+Nott::~Nott()
 {
   delete(expr_);
 
 }
 
-void Not::accept(Visitor *v)
+void Nott::accept(Visitor *v)
 {
-  v->visitNot(this);
+  v->visitNott(this);
 }
 
-Not *Not::clone() const
+Nott *Nott::clone() const
 {
-  return new Not(*this);
+  return new Nott(*this);
 }
 
 
@@ -2127,17 +2127,17 @@ ListItem *ListItem::clone() const
 }
 
 
-/********************   ListType    ********************/
+/********************   ListLatteType    ********************/
 
-void ListType::accept(Visitor *v)
+void ListLatteType::accept(Visitor *v)
 {
-  v->visitListType(this);
+  v->visitListLatteType(this);
 }
 
 
-ListType *ListType::clone() const
+ListLatteType *ListLatteType::clone() const
 {
-  return new ListType(*this);
+  return new ListLatteType(*this);
 }
 
 

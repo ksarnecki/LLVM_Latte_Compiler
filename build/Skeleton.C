@@ -14,7 +14,7 @@ void Skeleton::visitArg(Arg* t) {} //abstract class
 void Skeleton::visitBlock(Block* t) {} //abstract class
 void Skeleton::visitStmt(Stmt* t) {} //abstract class
 void Skeleton::visitItem(Item* t) {} //abstract class
-void Skeleton::visitType(Type* t) {} //abstract class
+void Skeleton::visitLatteType(LatteType* t) {} //abstract class
 void Skeleton::visitExpr(Expr* t) {} //abstract class
 void Skeleton::visitAddOp(AddOp* t) {} //abstract class
 void Skeleton::visitMulOp(MulOp* t) {} //abstract class
@@ -32,7 +32,7 @@ void Skeleton::visitFnDef(FnDef *fndef)
 {
   /* Code For FnDef Goes Here */
 
-  fndef->type_->accept(this);
+  fndef->lattetype_->accept(this);
   visitIdent(fndef->ident_);
   fndef->listarg_->accept(this);
   fndef->block_->accept(this);
@@ -43,7 +43,7 @@ void Skeleton::visitAr(Ar *ar)
 {
   /* Code For Ar Goes Here */
 
-  ar->type_->accept(this);
+  ar->lattetype_->accept(this);
   visitIdent(ar->ident_);
 
 }
@@ -75,7 +75,7 @@ void Skeleton::visitDecl(Decl *decl)
 {
   /* Code For Decl Goes Here */
 
-  decl->type_->accept(this);
+  decl->lattetype_->accept(this);
   decl->listitem_->accept(this);
 
 }
@@ -139,12 +139,12 @@ void Skeleton::visitCondElse(CondElse *condelse)
 
 }
 
-void Skeleton::visitWhile(While *while)
+void Skeleton::visitWhileStmnt(WhileStmnt *whilestmnt)
 {
-  /* Code For While Goes Here */
+  /* Code For WhileStmnt Goes Here */
 
-  while->expr_->accept(this);
-  while->stmt_->accept(this);
+  whilestmnt->expr_->accept(this);
+  whilestmnt->stmt_->accept(this);
 
 }
 
@@ -173,30 +173,30 @@ void Skeleton::visitInit(Init *init)
 
 }
 
-void Skeleton::visitInt(Int *int)
+void Skeleton::visitIntType(IntType *inttype)
 {
-  /* Code For Int Goes Here */
+  /* Code For IntType Goes Here */
 
 
 }
 
-void Skeleton::visitStr(Str *str)
+void Skeleton::visitStrType(StrType *strtype)
 {
-  /* Code For Str Goes Here */
+  /* Code For StrType Goes Here */
 
 
 }
 
-void Skeleton::visitBool(Bool *bool)
+void Skeleton::visitBoolType(BoolType *booltype)
 {
-  /* Code For Bool Goes Here */
+  /* Code For BoolType Goes Here */
 
 
 }
 
-void Skeleton::visitVoid(Void *void)
+void Skeleton::visitVoidType(VoidType *voidtype)
 {
-  /* Code For Void Goes Here */
+  /* Code For VoidType Goes Here */
 
 
 }
@@ -205,8 +205,8 @@ void Skeleton::visitFun(Fun *fun)
 {
   /* Code For Fun Goes Here */
 
-  fun->type_->accept(this);
-  fun->listtype_->accept(this);
+  fun->lattetype_->accept(this);
+  fun->listlattetype_->accept(this);
 
 }
 
@@ -265,11 +265,11 @@ void Skeleton::visitNeg(Neg *neg)
 
 }
 
-void Skeleton::visitNot(Not *not)
+void Skeleton::visitNott(Nott *nott)
 {
-  /* Code For Not Goes Here */
+  /* Code For Nott Goes Here */
 
-  not->expr_->accept(this);
+  nott->expr_->accept(this);
 
 }
 
@@ -431,9 +431,9 @@ void Skeleton::visitListItem(ListItem* listitem)
   }
 }
 
-void Skeleton::visitListType(ListType* listtype)
+void Skeleton::visitListLatteType(ListLatteType* listlattetype)
 {
-  for (ListType::iterator i = listtype->begin() ; i != listtype->end() ; ++i)
+  for (ListLatteType::iterator i = listlattetype->begin() ; i != listlattetype->end() ; ++i)
   {
     (*i)->accept(this);
   }
