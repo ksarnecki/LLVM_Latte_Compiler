@@ -39,10 +39,10 @@ void TypeChecker::visitFnDef(FnDef *fndef)
   }
   actRet = Type::createNull();
   fndef->block_->accept(this);
-  if(!Manager::cmp(funRetType, actRet)) {
+  if(!TypeCheckerManager::cmp(funRetType, actRet)) {
     addError(fndef->lattetype_->line_number, "Bad return type");
   }
-  Manager::addIdent(fndef->ident_, 
+  TypeCheckerManager::addIdent(fndef->ident_, 
     Type::createFunction(FunctionType(funRetType, funArgs)), 
     actNesting, enviroment, store);
 }
@@ -55,7 +55,7 @@ void TypeChecker::visitAr(Ar *ar)
 
 void TypeChecker::visitBlk(Blk *blk)
 {
-  Enviroment env = enviroment;
+  TypeCheckerEnviroment env = enviroment;
   actNesting++;
   blk->liststmt_->accept(this);
   actNesting--;
@@ -79,12 +79,12 @@ void TypeChecker::visitDecl(Decl *decl)
   {
     if(Init *item = dynamic_cast<Init*>(*i)) {
       item->expr_->accept(this);
-      if(!Manager::cmp(declType, actType)) {
+      if(!TypeCheckerManager::cmp(declType, actType)) {
         addError(item->expr_->line_number, "Bad init expression type");
       } else 
-        Manager::addIdent(item->ident_, declType, actNesting, enviroment, store);
+        TypeCheckerManager::addIdent(item->ident_, declType, actNesting, enviroment, store);
     } else if(NoInit *item = dynamic_cast<NoInit*>(*i)) {
-      Manager::addIdent(item->ident_, declType, actNesting, enviroment, store);
+      TypeCheckerManager::addIdent(item->ident_, declType, actNesting, enviroment, store);
     } else {
       throw Exception("[TypeChecker::visitDecl] casting error");
     }
@@ -97,7 +97,7 @@ void TypeChecker::visitAss(Ass *ass)
   Type identType = actType;
   ass->expr_->accept(this);
   Type exprType = actType;
-  if(!Manager::cmp(identType, exprType)) {
+  if(!TypeCheckerManager::cmp(identType, exprType)) {
     addError(ass->expr_->line_number, "Bad assigment expression type");
   }
 }
@@ -105,7 +105,7 @@ void TypeChecker::visitAss(Ass *ass)
 void TypeChecker::visitIncr(Incr *incr)
 {
   visitIdent(incr->ident_);
-  if(Manager::txt(actType)) {
+  if(TypeCheckerManager::txt(actType)) {
     addError(incr->line_number, "Bad expression type");
   }
 }
@@ -113,7 +113,7 @@ void TypeChecker::visitIncr(Incr *incr)
 void TypeChecker::visitDecr(Decr *decr)
 {
   visitIdent(decr->ident_);
-  if(Manager::txt(actType)) {
+  if(TypeCheckerManager::txt(actType)) {
     addError(decr->line_number, "Bad expression type");
   }
 }
@@ -132,7 +132,7 @@ void TypeChecker::visitVRet(VRet *vret)
 void TypeChecker::visitCond(Cond *cond)
 {
   cond->expr_->accept(this);
-  if(Manager::bsc(actType)) {
+  if(TypeCheckerManager::bsc(actType)) {
     addError(cond->expr_->line_number, "Bad expression type");
   }
   cond->stmt_->accept(this);
@@ -141,7 +141,7 @@ void TypeChecker::visitCond(Cond *cond)
 void TypeChecker::visitCondElse(CondElse *condelse)
 {
   condelse->expr_->accept(this);
-  if(Manager::bsc(actType)) {
+  if(TypeCheckerManager::bsc(actType)) {
     addError(condelse->expr_->line_number, "Bad expression type");
   }
   condelse->stmt_1->accept(this);
@@ -151,7 +151,7 @@ void TypeChecker::visitCondElse(CondElse *condelse)
 void TypeChecker::visitWhileStmnt(WhileStmnt *whilestmnt)
 {
   whilestmnt->expr_->accept(this);
-  if(Manager::bsc(actType)) {
+  if(TypeCheckerManager::bsc(actType)) {
     addError(whilestmnt->expr_->line_number, "Bad expression type");
   }
   whilestmnt->stmt_->accept(this);
@@ -233,7 +233,7 @@ void TypeChecker::visitELitFalse(ELitFalse *elitfalse)
 void TypeChecker::visitEApp(EApp *eapp)
 {
   visitIdent(eapp->ident_);
-  Type type = Manager::getTypeByIdent(eapp->ident_, enviroment, store);
+  Type type = TypeCheckerManager::getTypeByIdent(eapp->ident_, enviroment, store);
   if(type.isFunction()) {
     FunctionType ftype = type.asFunction();
     if(ftype.getArgs().Size()!=eapp->listexpr_->size()) {
@@ -245,7 +245,7 @@ void TypeChecker::visitEApp(EApp *eapp)
       for (ListExpr::iterator i = eapp->listexpr_->begin() ; i != eapp->listexpr_->end() ; ++i, ++ind)
       {
         (*i)->accept(this);
-        if(!Manager::cmp(actType, ftype.getArgs()[ind])) {
+        if(!TypeCheckerManager::cmp(actType, ftype.getArgs()[ind])) {
           addError(eapp->line_number, AnsiString(eapp->ident_)  + " bad " + AnsiString(ind+1) + " argument type");
           break;
         }
@@ -265,7 +265,7 @@ void TypeChecker::visitEString(EString *estring)
 void TypeChecker::visitNeg(Neg *neg)
 {
   neg->expr_->accept(this);
-  if(Manager::bsc(actType)) {
+  if(TypeCheckerManager::bsc(actType)) {
     addError(neg->expr_->line_number, "Bad expression type");
   }
 }
@@ -273,7 +273,7 @@ void TypeChecker::visitNeg(Neg *neg)
 void TypeChecker::visitNott(Nott *nott)
 {
   nott->expr_->accept(this);
-  if(Manager::bsc(actType)) {
+  if(TypeCheckerManager::bsc(actType)) {
     addError(nott->expr_->line_number, "Bad expression type");
   }
 }
@@ -284,7 +284,7 @@ void TypeChecker::visitEMul(EMul *emul)
   Type exp1 = actType;
   emul->expr_2->accept(this);
   Type exp2 = actType;
-  if(Manager::txt(exp1) || Manager::txt(exp2)  || !Manager::bsc(exp1) || !Manager::bsc(exp2)) {
+  if(TypeCheckerManager::txt(exp1) || TypeCheckerManager::txt(exp2)  || !TypeCheckerManager::bsc(exp1) || !TypeCheckerManager::bsc(exp2)) {
     addError(emul->expr_2->line_number, "Bad mul expression arg type");
   }
 }
@@ -295,7 +295,7 @@ void TypeChecker::visitEAdd(EAdd *eadd)
   Type exp1 = actType;
   eadd->expr_2->accept(this);
   Type exp2 = actType;
-  if(Manager::txt(exp1) || Manager::txt(exp2) ||  !Manager::bsc(exp1) || !Manager::bsc(exp2)) {
+  if(TypeCheckerManager::txt(exp1) || TypeCheckerManager::txt(exp2) ||  !TypeCheckerManager::bsc(exp1) || !TypeCheckerManager::bsc(exp2)) {
     addError(eadd->expr_2->line_number, "Bad add expression arg type");
   }
 }
@@ -306,7 +306,7 @@ void TypeChecker::visitERel(ERel *erel)
   Type exp1 = actType;
   erel->expr_2->accept(this);
   Type exp2 = actType;
-  if(!Manager::cst(exp1, exp2)) { 
+  if(!TypeCheckerManager::cst(exp1, exp2)) { 
     addError(erel->expr_2->line_number, "Bad rel expression arg type");
   }
 }
@@ -317,7 +317,7 @@ void TypeChecker::visitEAnd(EAnd *eand)
   Type exp1 = actType;
   eand->expr_2->accept(this);
   Type exp2 = actType;
-  if(!Manager::bsc(exp1) || !Manager::bsc(exp2)) {
+  if(!TypeCheckerManager::bsc(exp1) || !TypeCheckerManager::bsc(exp2)) {
     addError(eand->expr_2->line_number, "Bad rel expression arg type");
   }
 }
@@ -328,7 +328,7 @@ void TypeChecker::visitEOr(EOr *eor)
   Type exp1 = actType;
   eor->expr_2->accept(this);
   Type exp2 = actType;
-  if(!Manager::bsc(exp1) || !Manager::bsc(exp2)) {
+  if(!TypeCheckerManager::bsc(exp1) || !TypeCheckerManager::bsc(exp2)) {
     addError(eor->expr_2->line_number, "Bad rel expression arg type");
   }
 }
@@ -460,10 +460,62 @@ void TypeChecker::visitString(String x)
 
 void TypeChecker::visitIdent(Ident x)
 {
-  actType = Manager::getTypeByIdent(x, enviroment, store);
+  actType = TypeCheckerManager::getTypeByIdent(x, enviroment, store);
 }
 
 
 
+bool TypeCheckerManager::cmp(const Type& t1, const Type& t2) {
+  if(t1.isBasic() && t2.isBasic()) {
+    if(t1.asBasic().isInt() && t2.asBasic().isInt())
+      return true;
+    if(t1.asBasic().isBool() && t2.asBasic().isBool())
+      return true;
+    if(t1.asBasic().isString() && t2.asBasic().isString())
+      return true;
+    if(t1.asBasic().isChar() && t2.asBasic().isChar())
+      return true;
+    if(t1.asBasic().isVoid() && t2.asBasic().isVoid())
+      return true;
+  } 
+  if(t1.isFunction() && t2.isFunction()) {
+    //TODO
+  }
+  return false;
+}
 
+bool TypeCheckerManager::bsc(const Type& t) {
+  return t.isBasic();
+}
+
+bool TypeCheckerManager::txt(const Type& t) {
+  if(t.isBasic())
+    return t.asBasic().isString() || t.asBasic().isChar();
+  return false;
+}
+
+bool TypeCheckerManager::cst(const Type& t1, const Type& t2) {
+  //TODO
+  return cmp(t1, t2);
+}
+
+
+void TypeCheckerManager::addIdent(const Ident& ident, const Type& t, int nesting, TypeCheckerEnviroment& env, Store& str) {
+  int id = str.Size();
+  str.Insert(StoreElement(id, t));
+  env.Insert(TypeCheckerEnviromentElement(ident, id, nesting));
+}
+
+Type TypeCheckerManager::getTypeByIdent(const Ident& ident, TypeCheckerEnviroment& env, Store& str) {
+  for(int i=0;i<env.Size();i++) {
+    if(env[i].getIdent() == ident) {
+      for(int j=0;j<str.Size();j++) {
+        if(env[i].getStoreId()==str[j].getId())
+          return str[j].getType();
+      }
+      throw Exception("[TypeCheckerManager::getTypeByIdent] internal error");
+    }
+  }
+  return Type::createNull();
+}
 

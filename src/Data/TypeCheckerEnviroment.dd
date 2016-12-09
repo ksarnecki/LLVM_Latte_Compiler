@@ -1,0 +1,20 @@
+TypeCheckerEnviroment
+cpp
+
+int
+basic
+
+string 
+basic
+
+Ident
+external
+Absyn.H
+
+TypeCheckerEnviromentElement = record {
+	ident : Ident,
+	storeId : int,
+	nesting : int
+}
+
+TypeCheckerEnviroment = array of TypeCheckerEnviromentElement

@@ -1,11 +1,11 @@
 #include "Printer.h"
-/*
-void LLVMProgramPrinter::print(const LLVMProgram& program) {
+
+void Printer::print(const LLVMProgram& program) {
   AnsiString outString;
   outString += "declare void @printInt(i32);\n";
   outString += "define i32 @main(i32 %argc, i8** %argv) {\n";
   for (int i=0;i<program.Size();i++) {
-    LLVMInstr instr = program[i];
+    Instr instr = program[i];
     if (instr.isBinaryOperationInstr()) {
       outString += "  " + renderBinaryOperationInstr(instr.asBinaryOperationInstr());
     } else if (instr.isPrintInstr()) {
@@ -20,11 +20,11 @@ void LLVMProgramPrinter::print(const LLVMProgram& program) {
   printf("%s\n", outString.c_str());
 }
 
-AnsiString LLVMProgramPrinter::renderPrintInstr(const Register& reg) {
+AnsiString Printer::renderPrintInstr(const Register& reg) {
   return "call void @printInt(i32 " + renderRegister(reg) + ")";
 }
 
-AnsiString LLVMProgramPrinter::renderBinaryOperationInstr(const LLVMBinaryOperation& operation) {
+AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation) {
   AnsiString ret;
   ret += renderRegister(operation.getOutReg()) + " = ";
   ret += renderBinaryOperator(operation.getBop()) + " ";
@@ -33,7 +33,7 @@ AnsiString LLVMProgramPrinter::renderBinaryOperationInstr(const LLVMBinaryOperat
   return ret;
 }
 
-AnsiString LLVMProgramPrinter::renderBinaryOperator(const LLVMBinaryOperator& binaryOperator) {
+AnsiString Printer::renderBinaryOperator(const BinaryOperator& binaryOperator) {
   if (binaryOperator.isAdd()) { 
     return "add i32";
   } else if (binaryOperator.isDiv()) {
@@ -47,7 +47,7 @@ AnsiString LLVMProgramPrinter::renderBinaryOperator(const LLVMBinaryOperator& bi
   }
 }
 
-AnsiString LLVMProgramPrinter::renderBinaryOperationArgument(const LLVMBinaryOperationArgument& argument) {
+AnsiString Printer::renderBinaryOperationArgument(const BinaryOperationArgument& argument) {
   if (argument.isRegister())
     return renderRegister(argument.asRegister());
   if (argument.isInteger())
@@ -55,14 +55,6 @@ AnsiString LLVMProgramPrinter::renderBinaryOperationArgument(const LLVMBinaryOpe
   throw Exception("[LLVMProgramPrinter::renderBinaryOperationArgument] Unknown argument type!");
 }
 
-AnsiString LLVMProgramPrinter::renderRegister(const Register& r) {
-  if (r.isVariableRegister()) {
-    return "%" + r.asVariableRegister().getName() + "_.v" + AnsiString(r.asVariableRegister().getVersion());
-  } else if (r.isIntegerRegister()) {
-    return "%reg_" + AnsiString(r.asIntegerRegister());
-  } else if (r.isNull()) {
-    return "0";
-  }
-  throw Exception("[LLVMProgramPrinter::renderRegister] Unknown register type!");
+AnsiString Printer::renderRegister(const Register& r) {
+  return "%reg_" + AnsiString(r.getId());
 }
-*/

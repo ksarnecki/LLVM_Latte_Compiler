@@ -1,5 +1,5 @@
-#ifndef _ENVIROMENT_GEN_H_
-#define _ENVIROMENT_GEN_H_
+#ifndef _BUILDERENVIROMENT_GEN_H_
+#define _BUILDERENVIROMENT_GEN_H_
 #include "DynSet.h"
 //------------- int ---------------
 //----------------------------------
@@ -12,13 +12,13 @@
 #include "Absyn.H"
 //----------------------------------
 
-//------------- EnviromentElement ---------------
-class EnviromentElement {
+//------------- BuilderEnviromentElement ---------------
+class BuilderEnviromentElement {
   Ident ident;
   int storeId;
   int nesting;
 public:
-  EnviromentElement(const Ident&, const int&, const int&);
+  BuilderEnviromentElement(const Ident&, const int&, const int&);
   virtual const Ident& getIdent() const;
   virtual const int& getStoreId() const;
   virtual const int& getNesting() const;
@@ -27,21 +27,21 @@ public:
   virtual int& getNesting();
 
 
-  virtual ~EnviromentElement();
+  virtual ~BuilderEnviromentElement();
 
 };
 //----------------------------------
 
-//------------- Enviroment ---------------
+//------------- BuilderEnviroment ---------------
 #include "DynSet.h"
 
 
-class Enviroment : public DynSet<EnviromentElement> {
+class BuilderEnviroment : public DynSet<BuilderEnviromentElement> {
 public:
-  Enviroment();
+  BuilderEnviroment();
 
 
-  virtual ~Enviroment();
+  virtual ~BuilderEnviroment();
 
 };
 //----------------------------------

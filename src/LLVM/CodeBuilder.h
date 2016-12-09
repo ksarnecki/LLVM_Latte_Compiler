@@ -1,34 +1,26 @@
-#ifndef TYPECHECKER_HEADER
-#define TYPECHECKER_HEADER
+#ifndef CODEBUILDER_HEADER
+#define CODEBUILDER_HEADER
 
 #include "Absyn.H"
 #include "Store.h"
-#include "TypeCheckerEnviroment.h"
+#include "BuilderEnviroment.h"
+#include "LLVMProgram.h"
 #include "TypeError.h"
 
-class TypeCheckerManager
-{
-public:
-  static bool cmp(const Type&, const Type&);
-  static bool bsc(const Type&);
-  static bool cst(const Type&, const Type&);
-  static bool txt(const Type&);
-  static void addIdent(const Ident&, const Type&, int, TypeCheckerEnviroment&, Store&);
-  static Type getTypeByIdent(const Ident&, TypeCheckerEnviroment&, Store&);
-};
-
-class TypeChecker : public Visitor
+class CodeBuilder : public Visitor
 {
 private:
+  RegisterData registerData = RegisterData(Register(-1, RegisterKind::createNull()), Registers());
   Store store;
-  TypeCheckerEnviroment enviroment;
+  BuilderEnviroment enviroment;
   Type actType = Type::createNull();
   Type actRet = Type::createNull();
+  LLVMProgram program;
   int actNesting = 0;
   TypeErrors errors;
 
 public:
-void visitProgram(Program* p);
+  void visitProgram(Program* p);
   void visitTopDef(TopDef* p);
   void visitArg(Arg* p);
   void visitBlock(Block* p);
@@ -99,21 +91,15 @@ void visitProgram(Program* p);
   void visitString(String x);
   void visitIdent(Ident x);
 
-  void addError(int line, AnsiString msg) {
-    errors.Insert(TypeError(line, msg));
+  LLVMProgram compile(Visitable *v) {
+    v->accept(this);
+    return program;
   }
 
-  bool check(Visitable *v) {
-    v->accept(this);
-    if(errors.Size()>0) {
-      printf("ERROR\n");
-      for(int i=0;i<errors.Size();i++) {
-        printf("Type error at %d: %s\n", errors[i].getLine(), errors[i].getMsg().c_str());
-      }
-      return false;
-    }
-    return true;
-  }
+  //pomocnicze
+  Register getNextRegister(const RegisterKind);
+  RegisterKind getBinaryOperationRegisterKind(const Register&, const Register&);
+
 };
 
 

@@ -1,0 +1,20 @@
+BuilderEnviroment
+cpp
+
+int
+basic
+
+string 
+basic
+
+Ident
+external
+Absyn.H
+
+BuilderEnviromentElement = record {
+	ident : Ident,
+	storeId : int,
+	nesting : int
+}
+
+BuilderEnviroment = array of BuilderEnviromentElement

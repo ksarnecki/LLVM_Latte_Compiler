@@ -7,6 +7,10 @@ basic
 string 
 basic
 
+Register
+external
+Register.h
+
 TypeArray = array of Type
 
 BasicTypeArray = array of BasicType

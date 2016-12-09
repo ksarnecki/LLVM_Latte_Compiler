@@ -13,7 +13,7 @@ Types.h
 
 StoreElement = record {
   id : int,
-  type : Type	
+  type : Type
 }
 
 Store = array of StoreElement

@@ -1,0 +1,31 @@
+Register
+cpp
+
+int
+basic
+
+string 
+basic
+
+Ident
+external
+Absyn.H
+
+RegisterKind = variant {
+	valueI32,
+	valueDouble,
+	ptrI32,
+	null
+}
+
+Register = record {
+    id : int,
+	kind : RegisterKind
+}
+
+Registers = array of Register
+
+RegisterData = record {
+  lastRegister : Register,
+  registers : Registers
+}

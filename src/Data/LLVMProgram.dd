@@ -1,0 +1,35 @@
+LLVMProgram
+cpp
+
+int
+basic
+
+string
+basic
+
+Register
+external
+Register.h
+
+BinaryOperationArgument = variant {
+  register : Register,
+  integer : int
+}
+
+BinaryOperator = variant {
+  add, sub, div, mul
+}
+
+BinaryOperation = record {
+  outReg : Register,
+  lArg : BinaryOperationArgument,
+  rArg : BinaryOperationArgument,
+  bop : BinaryOperator
+}
+
+Instr = variant {
+  binaryOperationInstr : BinaryOperation,
+  printInstr : Register
+}
+
+LLVMProgram = array of Instr
