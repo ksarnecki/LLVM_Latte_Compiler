@@ -11,9 +11,14 @@ Register
 external
 Register.h
 
+RegisterKind
+external
+Register.h
+
+
 BinaryOperationArgument = variant {
   register : Register,
-  integer : int
+  number : string
 }
 
 BinaryOperator = variant {
@@ -32,4 +37,27 @@ Instr = variant {
   printInstr : Register
 }
 
-LLVMProgram = array of Instr
+InstrArray = array of Instr
+
+LLVMBlock = record {
+	name : string,
+	body : InstrArray
+}
+
+LLVMBlockArray = array of LLVMBlock
+
+LLVMFunctionArgument = record {
+  type : RegisterKind,
+  name : string
+}
+
+LLVMFunctionArgumentArray = array of LLVMFunctionArgument
+
+LLVMFunction = record {
+    name : string,
+    type : RegisterKind,
+    args : LLVMFunctionArgumentArray,
+	blocks : LLVMBlockArray
+}
+
+LLVMProgram = array of LLVMFunction

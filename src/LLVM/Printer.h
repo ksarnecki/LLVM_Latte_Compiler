@@ -12,6 +12,14 @@ private:
   static AnsiString renderPrintInstr(const Register&);
   static AnsiString renderBinaryOperationArgument(const BinaryOperationArgument&);
   static AnsiString renderBinaryOperator(const BinaryOperator&);
+
+  static AnsiString renderFunctionArgument(const LLVMFunctionArgument&);
+  static AnsiString renderRegisterKind(const RegisterKind&);
+
+  static AnsiString renderBody(const InstrArray&);
+  static AnsiString renderBlock(const LLVMBlock&);
+  static void printFunction(const LLVMFunction&);
+
 public:
   static void print(const LLVMProgram&);
 };

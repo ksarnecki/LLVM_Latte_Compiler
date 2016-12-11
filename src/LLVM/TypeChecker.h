@@ -2,7 +2,7 @@
 #define TYPECHECKER_HEADER
 
 #include "Absyn.H"
-#include "Store.h"
+#include "TypeCheckerStore.h"
 #include "TypeCheckerEnviroment.h"
 #include "TypeError.h"
 
@@ -13,14 +13,14 @@ public:
   static bool bsc(const Type&);
   static bool cst(const Type&, const Type&);
   static bool txt(const Type&);
-  static void addIdent(const Ident&, const Type&, int, TypeCheckerEnviroment&, Store&);
-  static Type getTypeByIdent(const Ident&, TypeCheckerEnviroment&, Store&);
+  static void addIdent(const Ident&, const Type&, int, TypeCheckerEnviroment&, TypeCheckerStore&);
+  static Type getTypeByIdent(const Ident&, TypeCheckerEnviroment&, TypeCheckerStore&);
 };
 
 class TypeChecker : public Visitor
 {
 private:
-  Store store;
+  TypeCheckerStore store;
   TypeCheckerEnviroment enviroment;
   Type actType = Type::createNull();
   Type actRet = Type::createNull();

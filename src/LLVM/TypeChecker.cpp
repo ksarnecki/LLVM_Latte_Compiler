@@ -500,13 +500,13 @@ bool TypeCheckerManager::cst(const Type& t1, const Type& t2) {
 }
 
 
-void TypeCheckerManager::addIdent(const Ident& ident, const Type& t, int nesting, TypeCheckerEnviroment& env, Store& str) {
+void TypeCheckerManager::addIdent(const Ident& ident, const Type& t, int nesting, TypeCheckerEnviroment& env, TypeCheckerStore& str) {
   int id = str.Size();
-  str.Insert(StoreElement(id, t));
+  str.Insert(TypeCheckerStoreElement(id, t));
   env.Insert(TypeCheckerEnviromentElement(ident, id, nesting));
 }
 
-Type TypeCheckerManager::getTypeByIdent(const Ident& ident, TypeCheckerEnviroment& env, Store& str) {
+Type TypeCheckerManager::getTypeByIdent(const Ident& ident, TypeCheckerEnviroment& env, TypeCheckerStore& str) {
   for(int i=0;i<env.Size();i++) {
     if(env[i].getIdent() == ident) {
       for(int j=0;j<str.Size();j++) {

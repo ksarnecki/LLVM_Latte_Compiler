@@ -12,6 +12,8 @@ external
 Absyn.H
 
 RegisterKind = variant {
+	valueI1,
+	valueI8,
 	valueI32,
 	valueDouble,
 	ptrI32,

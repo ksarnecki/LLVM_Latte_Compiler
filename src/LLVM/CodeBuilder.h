@@ -15,6 +15,7 @@ private:
   BuilderEnviroment enviroment;
   Type actType = Type::createNull();
   Type actRet = Type::createNull();
+  LLVMBlockArray actBlocks;
   LLVMProgram program;
   int actNesting = 0;
   TypeErrors errors;
@@ -99,6 +100,10 @@ public:
   //pomocnicze
   Register getNextRegister(const RegisterKind);
   RegisterKind getBinaryOperationRegisterKind(const Register&, const Register&);
+  RegisterKind getRegisterKindFromLatteType(const LatteType*);
+
+  void initBlock(const AnsiString&);
+  void addInstr(const Instr);
 
 };
 

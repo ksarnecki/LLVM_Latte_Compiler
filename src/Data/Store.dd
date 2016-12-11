@@ -11,9 +11,34 @@ Type
 external
 Types.h
 
+Register
+external
+Register.h
+
+BasicObject = variant {
+  int : Register,
+  bool : Register,
+  double : Register,
+  char : Register,
+  string : Register
+}
+
+FunctionObject = record {
+  name : string
+}
+
+Object = variant {
+  basic : BasicObject,
+  function : FunctionObject,
+  classObject,
+  null
+}
+
 StoreElement = record {
   id : int,
-  type : Type
+  obj : Object
 }
+
+ObjectArray = array of Object
 
 Store = array of StoreElement

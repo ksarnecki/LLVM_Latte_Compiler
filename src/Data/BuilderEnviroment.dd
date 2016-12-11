@@ -13,8 +13,7 @@ Absyn.H
 
 BuilderEnviromentElement = record {
 	ident : Ident,
-	storeId : int,
-	nesting : int
+	storeId : int
 }
 
 BuilderEnviroment = array of BuilderEnviromentElement

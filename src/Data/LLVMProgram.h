@@ -12,13 +12,17 @@
 #include "Register.h"
 //----------------------------------
 
+//------------- RegisterKind ---------------
+#include "Register.h"
+//----------------------------------
+
 //------------- BinaryOperationArgument ---------------
 class BinaryOperationArgument {
   int _type;
   void* _ptr;
 
   static const int _TypeRegister;
-  static const int _TypeInteger;
+  static const int _TypeNumber;
 
   virtual void init(int, void*);
   virtual void clean();
@@ -28,18 +32,18 @@ public:
   virtual BinaryOperationArgument& operator=(const BinaryOperationArgument&);
 
   virtual bool isRegister() const;
-  virtual bool isInteger() const;
+  virtual bool isNumber() const;
 
   virtual const Register& asRegister() const;
   virtual Register& asRegister();
-  virtual const int& asInteger() const;
-  virtual int& asInteger();
+  virtual const AnsiString& asNumber() const;
+  virtual AnsiString& asNumber();
 
 
   virtual ~BinaryOperationArgument();
 
   static BinaryOperationArgument createRegister(const Register&);
-  static BinaryOperationArgument createInteger(const int&);
+  static BinaryOperationArgument createNumber(const AnsiString&);
 
 };
 //----------------------------------
@@ -133,11 +137,110 @@ public:
 };
 //----------------------------------
 
+//------------- InstrArray ---------------
+#include "DynSet.h"
+
+
+class InstrArray : public DynSet<Instr> {
+public:
+  InstrArray();
+
+
+  virtual ~InstrArray();
+
+};
+//----------------------------------
+
+//------------- LLVMBlock ---------------
+class LLVMBlock {
+  AnsiString name;
+  InstrArray body;
+public:
+  LLVMBlock(const AnsiString&, const InstrArray&);
+  virtual const AnsiString& getName() const;
+  virtual const InstrArray& getBody() const;
+  virtual AnsiString& getName();
+  virtual InstrArray& getBody();
+
+
+  virtual ~LLVMBlock();
+
+};
+//----------------------------------
+
+//------------- LLVMBlockArray ---------------
+#include "DynSet.h"
+
+
+class LLVMBlockArray : public DynSet<LLVMBlock> {
+public:
+  LLVMBlockArray();
+
+
+  virtual ~LLVMBlockArray();
+
+};
+//----------------------------------
+
+//------------- LLVMFunctionArgument ---------------
+class LLVMFunctionArgument {
+  RegisterKind type;
+  AnsiString name;
+public:
+  LLVMFunctionArgument(const RegisterKind&, const AnsiString&);
+  virtual const RegisterKind& getType() const;
+  virtual const AnsiString& getName() const;
+  virtual RegisterKind& getType();
+  virtual AnsiString& getName();
+
+
+  virtual ~LLVMFunctionArgument();
+
+};
+//----------------------------------
+
+//------------- LLVMFunctionArgumentArray ---------------
+#include "DynSet.h"
+
+
+class LLVMFunctionArgumentArray : public DynSet<LLVMFunctionArgument> {
+public:
+  LLVMFunctionArgumentArray();
+
+
+  virtual ~LLVMFunctionArgumentArray();
+
+};
+//----------------------------------
+
+//------------- LLVMFunction ---------------
+class LLVMFunction {
+  AnsiString name;
+  RegisterKind type;
+  LLVMFunctionArgumentArray args;
+  LLVMBlockArray blocks;
+public:
+  LLVMFunction(const AnsiString&, const RegisterKind&, const LLVMFunctionArgumentArray&, const LLVMBlockArray&);
+  virtual const AnsiString& getName() const;
+  virtual const RegisterKind& getType() const;
+  virtual const LLVMFunctionArgumentArray& getArgs() const;
+  virtual const LLVMBlockArray& getBlocks() const;
+  virtual AnsiString& getName();
+  virtual RegisterKind& getType();
+  virtual LLVMFunctionArgumentArray& getArgs();
+  virtual LLVMBlockArray& getBlocks();
+
+
+  virtual ~LLVMFunction();
+
+};
+//----------------------------------
+
 //------------- LLVMProgram ---------------
 #include "DynSet.h"
 
 
-class LLVMProgram : public DynSet<Instr> {
+class LLVMProgram : public DynSet<LLVMFunction> {
 public:
   LLVMProgram();
 

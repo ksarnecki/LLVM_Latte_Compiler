@@ -41,7 +41,7 @@ bnfc: src/LatteCPP.cf
 data: data_clean data_make
 
 data_clean: 
-	rm src/Data/*.cpp
+	rm -f src/Data/*.cpp src/Data/*.h
 
 data_make: $(CPP_FILES_GEN)
 

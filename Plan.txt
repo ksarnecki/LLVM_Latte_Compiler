@@ -17,3 +17,6 @@ PLAN
 -
 -
 *
+
+//TODO
+typer - sprawdzić czy funkcja/klasa o takiej nazwie istnieje

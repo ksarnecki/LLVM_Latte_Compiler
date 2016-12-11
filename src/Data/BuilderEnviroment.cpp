@@ -11,7 +11,7 @@
 //----------------------------------
 
 //------------- BuilderEnviromentElement ---------------
-BuilderEnviromentElement::BuilderEnviromentElement(const Ident& _ident, const int& _storeId, const int& _nesting) : ident(_ident), storeId(_storeId), nesting(_nesting) {
+BuilderEnviromentElement::BuilderEnviromentElement(const Ident& _ident, const int& _storeId) : ident(_ident), storeId(_storeId) {
 }
 const Ident& BuilderEnviromentElement::getIdent() const {
   return ident;
@@ -24,12 +24,6 @@ const int& BuilderEnviromentElement::getStoreId() const {
 }
 int& BuilderEnviromentElement::getStoreId() {
   return storeId;
-}
-const int& BuilderEnviromentElement::getNesting() const {
-  return nesting;
-}
-int& BuilderEnviromentElement::getNesting() {
-  return nesting;
 }
 BuilderEnviromentElement::~BuilderEnviromentElement() {
 }

@@ -17,6 +17,8 @@ class RegisterKind {
   int _type;
   void* _ptr;
 
+  static const int _TypeValueI1;
+  static const int _TypeValueI8;
   static const int _TypeValueI32;
   static const int _TypeValueDouble;
   static const int _TypePtrI32;
@@ -29,6 +31,8 @@ public:
   RegisterKind(const RegisterKind&);
   virtual RegisterKind& operator=(const RegisterKind&);
 
+  virtual bool isValueI1() const;
+  virtual bool isValueI8() const;
   virtual bool isValueI32() const;
   virtual bool isValueDouble() const;
   virtual bool isPtrI32() const;
@@ -38,6 +42,8 @@ public:
 
   virtual ~RegisterKind();
 
+  static RegisterKind createValueI1();
+  static RegisterKind createValueI8();
   static RegisterKind createValueI32();
   static RegisterKind createValueDouble();
   static RegisterKind createPtrI32();

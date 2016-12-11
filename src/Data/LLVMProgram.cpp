@@ -10,16 +10,19 @@
 //------------- Register ---------------
 //----------------------------------
 
+//------------- RegisterKind ---------------
+//----------------------------------
+
 //------------- BinaryOperationArgument ---------------
 const int BinaryOperationArgument::_TypeRegister = 0;
-const int BinaryOperationArgument::_TypeInteger = 1;
+const int BinaryOperationArgument::_TypeNumber = 1;
 void BinaryOperationArgument::init(int type, void* ptr) {
   if (type==_TypeRegister) {
     _type = type;
     _ptr = new Register(*(Register*) ptr);
-  } else if (type==_TypeInteger) {
+  } else if (type==_TypeNumber) {
     _type = type;
-    _ptr = new int(*(int*) ptr);
+    _ptr = new AnsiString(*(AnsiString*) ptr);
   }
 }
 void BinaryOperationArgument::clean() {
@@ -27,9 +30,9 @@ void BinaryOperationArgument::clean() {
     _type = -1;
     delete (Register*) _ptr;
     _ptr = 0;
-  } else if (_type==_TypeInteger) {
+  } else if (_type==_TypeNumber) {
     _type = -1;
-    delete (int*) _ptr;
+    delete (AnsiString*) _ptr;
     _ptr = 0;
   }
 }
@@ -46,8 +49,8 @@ BinaryOperationArgument& BinaryOperationArgument::operator=(const BinaryOperatio
 bool BinaryOperationArgument::isRegister() const {
   return _type==_TypeRegister;
 }
-bool BinaryOperationArgument::isInteger() const {
-  return _type==_TypeInteger;
+bool BinaryOperationArgument::isNumber() const {
+  return _type==_TypeNumber;
 }
 const Register& BinaryOperationArgument::asRegister() const {
   if (_type!=_TypeRegister)
@@ -59,15 +62,15 @@ Register& BinaryOperationArgument::asRegister() {
     throw Exception("BinaryOperationArgument::asRegister");
   return *(Register*) _ptr;
 }
-const int& BinaryOperationArgument::asInteger() const {
-  if (_type!=_TypeInteger)
-    throw Exception("BinaryOperationArgument::asInteger");
-  return *(int*) _ptr;
+const AnsiString& BinaryOperationArgument::asNumber() const {
+  if (_type!=_TypeNumber)
+    throw Exception("BinaryOperationArgument::asNumber");
+  return *(AnsiString*) _ptr;
 }
-int& BinaryOperationArgument::asInteger() {
-  if (_type!=_TypeInteger)
-    throw Exception("BinaryOperationArgument::asInteger");
-  return *(int*) _ptr;
+AnsiString& BinaryOperationArgument::asNumber() {
+  if (_type!=_TypeNumber)
+    throw Exception("BinaryOperationArgument::asNumber");
+  return *(AnsiString*) _ptr;
 }
 
 
@@ -80,10 +83,10 @@ BinaryOperationArgument BinaryOperationArgument::createRegister(const Register& 
   _value._ptr = new Register(_param);
   return _value;
 }
-BinaryOperationArgument BinaryOperationArgument::createInteger(const int& _param) {
+BinaryOperationArgument BinaryOperationArgument::createNumber(const AnsiString& _param) {
   BinaryOperationArgument _value;
-  _value._type = _TypeInteger;
-  _value._ptr = new int(_param);
+  _value._type = _TypeNumber;
+  _value._ptr = new AnsiString(_param);
   return _value;
 }
 
@@ -293,6 +296,96 @@ Instr Instr::createPrintInstr(const Register& _param) {
 }
 
 
+//----------------------------------
+
+//------------- InstrArray ---------------
+InstrArray::InstrArray() {
+}
+InstrArray::~InstrArray() {
+}
+//----------------------------------
+
+//------------- LLVMBlock ---------------
+LLVMBlock::LLVMBlock(const AnsiString& _name, const InstrArray& _body) : name(_name), body(_body) {
+}
+const AnsiString& LLVMBlock::getName() const {
+  return name;
+}
+AnsiString& LLVMBlock::getName() {
+  return name;
+}
+const InstrArray& LLVMBlock::getBody() const {
+  return body;
+}
+InstrArray& LLVMBlock::getBody() {
+  return body;
+}
+LLVMBlock::~LLVMBlock() {
+}
+//----------------------------------
+
+//------------- LLVMBlockArray ---------------
+LLVMBlockArray::LLVMBlockArray() {
+}
+LLVMBlockArray::~LLVMBlockArray() {
+}
+//----------------------------------
+
+//------------- LLVMFunctionArgument ---------------
+LLVMFunctionArgument::LLVMFunctionArgument(const RegisterKind& _type, const AnsiString& _name) : type(_type), name(_name) {
+}
+const RegisterKind& LLVMFunctionArgument::getType() const {
+  return type;
+}
+RegisterKind& LLVMFunctionArgument::getType() {
+  return type;
+}
+const AnsiString& LLVMFunctionArgument::getName() const {
+  return name;
+}
+AnsiString& LLVMFunctionArgument::getName() {
+  return name;
+}
+LLVMFunctionArgument::~LLVMFunctionArgument() {
+}
+//----------------------------------
+
+//------------- LLVMFunctionArgumentArray ---------------
+LLVMFunctionArgumentArray::LLVMFunctionArgumentArray() {
+}
+LLVMFunctionArgumentArray::~LLVMFunctionArgumentArray() {
+}
+//----------------------------------
+
+//------------- LLVMFunction ---------------
+LLVMFunction::LLVMFunction(const AnsiString& _name, const RegisterKind& _type, const LLVMFunctionArgumentArray& _args, const LLVMBlockArray& _blocks) : name(_name), type(_type), args(_args), blocks(_blocks) {
+}
+const AnsiString& LLVMFunction::getName() const {
+  return name;
+}
+AnsiString& LLVMFunction::getName() {
+  return name;
+}
+const RegisterKind& LLVMFunction::getType() const {
+  return type;
+}
+RegisterKind& LLVMFunction::getType() {
+  return type;
+}
+const LLVMFunctionArgumentArray& LLVMFunction::getArgs() const {
+  return args;
+}
+LLVMFunctionArgumentArray& LLVMFunction::getArgs() {
+  return args;
+}
+const LLVMBlockArray& LLVMFunction::getBlocks() const {
+  return blocks;
+}
+LLVMBlockArray& LLVMFunction::getBlocks() {
+  return blocks;
+}
+LLVMFunction::~LLVMFunction() {
+}
 //----------------------------------
 
 //------------- LLVMProgram ---------------

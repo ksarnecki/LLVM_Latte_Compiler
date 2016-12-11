@@ -1,0 +1,19 @@
+TypeCheckerStore
+cpp
+
+int
+basic
+
+string 
+basic
+
+Type
+external
+Types.h
+
+TypeCheckerStoreElement = record {
+  id : int,
+  type : Type
+}
+
+TypeCheckerStore = array of TypeCheckerStoreElement

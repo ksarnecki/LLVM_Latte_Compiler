@@ -11,12 +11,20 @@
 //----------------------------------
 
 //------------- RegisterKind ---------------
-const int RegisterKind::_TypeValueI32 = 0;
-const int RegisterKind::_TypeValueDouble = 1;
-const int RegisterKind::_TypePtrI32 = 2;
-const int RegisterKind::_TypeNull = 3;
+const int RegisterKind::_TypeValueI1 = 0;
+const int RegisterKind::_TypeValueI8 = 1;
+const int RegisterKind::_TypeValueI32 = 2;
+const int RegisterKind::_TypeValueDouble = 3;
+const int RegisterKind::_TypePtrI32 = 4;
+const int RegisterKind::_TypeNull = 5;
 void RegisterKind::init(int type, void* ptr) {
-  if (type==_TypeValueI32) {
+  if (type==_TypeValueI1) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeValueI8) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeValueI32) {
     _type = type;
     _ptr = 0;
   } else if (type==_TypeValueDouble) {
@@ -31,7 +39,15 @@ void RegisterKind::init(int type, void* ptr) {
   }
 }
 void RegisterKind::clean() {
-  if (_type==_TypeValueI32) {
+  if (_type==_TypeValueI1) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("RegisterKind::clean()");
+  } else if (_type==_TypeValueI8) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("RegisterKind::clean()");
+  } else if (_type==_TypeValueI32) {
     _type = -1;
     if (_ptr!=0)
       throw Exception("RegisterKind::clean()");
@@ -59,6 +75,12 @@ RegisterKind& RegisterKind::operator=(const RegisterKind& _value) {
   init(_value._type, _value._ptr);
   return *this;
 }
+bool RegisterKind::isValueI1() const {
+  return _type==_TypeValueI1;
+}
+bool RegisterKind::isValueI8() const {
+  return _type==_TypeValueI8;
+}
 bool RegisterKind::isValueI32() const {
   return _type==_TypeValueI32;
 }
@@ -75,6 +97,18 @@ bool RegisterKind::isNull() const {
 
 RegisterKind::~RegisterKind() {
   clean();
+}
+RegisterKind RegisterKind::createValueI1() {
+  RegisterKind _value;
+  _value._type = _TypeValueI1;
+  _value._ptr = 0;
+  return _value;
+}
+RegisterKind RegisterKind::createValueI8() {
+  RegisterKind _value;
+  _value._type = _TypeValueI8;
+  _value._ptr = 0;
+  return _value;
 }
 RegisterKind RegisterKind::createValueI32() {
   RegisterKind _value;

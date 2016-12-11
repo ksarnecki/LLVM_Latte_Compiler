@@ -16,15 +16,12 @@
 class BuilderEnviromentElement {
   Ident ident;
   int storeId;
-  int nesting;
 public:
-  BuilderEnviromentElement(const Ident&, const int&, const int&);
+  BuilderEnviromentElement(const Ident&, const int&);
   virtual const Ident& getIdent() const;
   virtual const int& getStoreId() const;
-  virtual const int& getNesting() const;
   virtual Ident& getIdent();
   virtual int& getStoreId();
-  virtual int& getNesting();
 
 
   virtual ~BuilderEnviromentElement();

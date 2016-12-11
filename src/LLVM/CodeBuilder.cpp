@@ -25,26 +25,41 @@ void CodeBuilder::visitProg(Prog *prog)
 
 void CodeBuilder::visitFnDef(FnDef *fndef)
 {
-  fndef->lattetype_->accept(this);
-  Type funRetType = actType;
-  TypeArray funArgs;
+  /*
+  * Budujemy obiekt 
+  *
+  *
+  */
+
+  /*
+  * 1. Nazwa funkcji
+  */
+  AnsiString fName = fndef->ident_;
+  /*
+  * 2. Typ zwracany
+  */
+  RegisterKind fRetType = getRegisterKindFromLatteType(fndef->lattetype_);
+
+  /*
+  * 3. Argumenty
+  */
+  LLVMFunctionArgumentArray fArgs = LLVMFunctionArgumentArray();
   for (ListArg::iterator i = fndef->listarg_->begin() ; i != fndef->listarg_->end() ; ++i)
-  {
-    if(Ar *arg = dynamic_cast<Ar*>(*i)) {
-      arg->lattetype_->accept(this);
-      funArgs.Insert(actType);
-    } else {
-      throw Exception("[CodeBuilder::visitFnDef] unknown arg kind");
-    }
-  }
-  actRet = Type::createNull();
+    if(Ar *arg = dynamic_cast<Ar*>(*i))
+      fArgs.Insert(LLVMFunctionArgument(getRegisterKindFromLatteType(arg->lattetype_), arg->ident_));
+    else
+      throw Exception("[CodeBuilder::visitFnDef] Unknown arg kind.");
+
+  /*
+  * 4. Ciało funkcji
+  */
+  actBlocks = LLVMBlockArray();
+  initBlock(fName+"_entry");
   fndef->block_->accept(this);
-  //if(!Manager::cmp(funRetType, actRet)) {
-    //addError(fndef->lattetype_->line_number, "Bad return type");
-  //}
-  //Manager::addIdent(fndef->ident_, 
-  //  Type::createFunction(FunctionType(funRetType, funArgs)), 
-  //  actNesting, enviroment, store);
+  LLVMBlockArray fBlocks = actBlocks;
+
+  program.Insert(LLVMFunction(fName, fRetType, fArgs, fBlocks));
+
 }
 
 void CodeBuilder::visitAr(Ar *ar)
@@ -300,7 +315,7 @@ void CodeBuilder::visitEMul(EMul *emul)
     throw Exception("[CodeBuilder::visitEMul] Unknown emul->mulop_ kind.");
   BinaryOperation bon = BinaryOperation(outReg, lArg, rArg, bor);
   Instr instr = Instr::createBinaryOperationInstr(bon);
-  program.Insert(instr);
+  addInstr(instr);
   registerData.getLastRegister() = outReg;
 }
 
@@ -321,7 +336,7 @@ void CodeBuilder::visitEAdd(EAdd *eadd)
     throw Exception("[CodeBuilder::visitEAdd] Unknown eadd->addop_ kind.");
   BinaryOperation bon = BinaryOperation(outReg, lArg, rArg, bor);
   Instr instr = Instr::createBinaryOperationInstr(bon);
-  program.Insert(instr);
+  addInstr(instr);
   registerData.getLastRegister() = outReg;
 }
 
@@ -465,25 +480,35 @@ void CodeBuilder::visitListExpr(ListExpr* listexpr)
 
 void CodeBuilder::visitInteger(Integer x)
 {
-  BinaryOperationArgument lArg = BinaryOperationArgument::createInteger(x);
-  BinaryOperationArgument rArg = BinaryOperationArgument::createInteger(0);
+  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(x);
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
   Register outReg = getNextRegister(RegisterKind::createValueI32());
   BinaryOperation bo = BinaryOperation(outReg, lArg, rArg, BinaryOperator::createAdd());
   Instr instr = Instr::createBinaryOperationInstr(bo);
-  program.Insert(instr);
+  addInstr(instr);
   registerData.getLastRegister() = outReg;
 }
 
 void CodeBuilder::visitChar(Char x)
 {
-  //TODO
-  //actType = Type::createBasic(BasicType::createChar());
+  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(x);
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
+  Register outReg = getNextRegister(RegisterKind::createValueI8());
+  BinaryOperation bo = BinaryOperation(outReg, lArg, rArg, BinaryOperator::createAdd());
+  Instr instr = Instr::createBinaryOperationInstr(bo);
+  addInstr(instr);
+  registerData.getLastRegister() = outReg;
 }
 
 void CodeBuilder::visitDouble(Double x)
 {
-  //TODO
-  //actType = Type::createBasic(BasicType::createDouble());
+  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(x);
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
+  Register outReg = getNextRegister(RegisterKind::createValueDouble());
+  BinaryOperation bo = BinaryOperation(outReg, lArg, rArg, BinaryOperator::createAdd());
+  Instr instr = Instr::createBinaryOperationInstr(bo);
+  addInstr(instr);
+  registerData.getLastRegister() = outReg;
 }
 
 void CodeBuilder::visitString(String x)
@@ -522,4 +547,17 @@ RegisterKind CodeBuilder::getBinaryOperationRegisterKind(const Register& r1, con
   RegisterKind::createValueDouble();
 }
 
+RegisterKind CodeBuilder::getRegisterKindFromLatteType(const LatteType* type) {
+  //TODO
+  return RegisterKind::createValueI32();
 
+  throw Exception("[getRegisterKindFromType] Unknown type.");
+}
+
+void CodeBuilder::initBlock(const AnsiString& name) {
+  actBlocks.Insert(LLVMBlock(name, InstrArray()));
+}
+
+void CodeBuilder::addInstr(const Instr instr) {
+  actBlocks[actBlocks.Size()-1].getBody().Insert(instr);
+}
