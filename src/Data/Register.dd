@@ -16,7 +16,7 @@ RegisterKind = variant {
 	valueI8,
 	valueI32,
 	valueDouble,
-	ptrI32,
+	ptr : RegisterKind, 
 	null
 }
 

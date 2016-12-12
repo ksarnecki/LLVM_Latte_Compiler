@@ -15,6 +15,10 @@ RegisterKind
 external
 Register.h
 
+Registers
+external
+Register.h
+
 
 BinaryOperationArgument = variant {
   register : Register,
@@ -32,8 +36,15 @@ BinaryOperation = record {
   bop : BinaryOperator
 }
 
+CallInstr = record {
+  retType : RegisterKind,
+  function : string,
+  args : Registers
+}
+
 Instr = variant {
   binaryOperationInstr : BinaryOperation,
+  callInstr : CallInstr,
   printInstr : Register
 }
 

@@ -15,6 +15,10 @@ Register
 external
 Register.h
 
+RegisterKind
+external
+Register.h
+
 BasicObject = variant {
   int : Register,
   bool : Register,
@@ -24,7 +28,7 @@ BasicObject = variant {
 }
 
 FunctionObject = record {
-  name : string
+  type : RegisterKind
 }
 
 Object = variant {

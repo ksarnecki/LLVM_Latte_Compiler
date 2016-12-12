@@ -8,19 +8,15 @@
 #include "AnsiString.h"
 //----------------------------------
 
-//------------- Ident ---------------
-#include "Absyn.H"
-//----------------------------------
-
 //------------- BuilderEnviromentElement ---------------
 class BuilderEnviromentElement {
-  Ident ident;
+  AnsiString ident;
   int storeId;
 public:
-  BuilderEnviromentElement(const Ident&, const int&);
-  virtual const Ident& getIdent() const;
+  BuilderEnviromentElement(const AnsiString&, const int&);
+  virtual const AnsiString& getIdent() const;
   virtual const int& getStoreId() const;
-  virtual Ident& getIdent();
+  virtual AnsiString& getIdent();
   virtual int& getStoreId();
 
 

@@ -16,6 +16,10 @@
 #include "Register.h"
 //----------------------------------
 
+//------------- Registers ---------------
+#include "Register.h"
+//----------------------------------
+
 //------------- BinaryOperationArgument ---------------
 class BinaryOperationArgument {
   int _type;
@@ -105,12 +109,33 @@ public:
 };
 //----------------------------------
 
+//------------- CallInstr ---------------
+class CallInstr {
+  RegisterKind retType;
+  AnsiString function;
+  Registers args;
+public:
+  CallInstr(const RegisterKind&, const AnsiString&, const Registers&);
+  virtual const RegisterKind& getRetType() const;
+  virtual const AnsiString& getFunction() const;
+  virtual const Registers& getArgs() const;
+  virtual RegisterKind& getRetType();
+  virtual AnsiString& getFunction();
+  virtual Registers& getArgs();
+
+
+  virtual ~CallInstr();
+
+};
+//----------------------------------
+
 //------------- Instr ---------------
 class Instr {
   int _type;
   void* _ptr;
 
   static const int _TypeBinaryOperationInstr;
+  static const int _TypeCallInstr;
   static const int _TypePrintInstr;
 
   virtual void init(int, void*);
@@ -121,10 +146,13 @@ public:
   virtual Instr& operator=(const Instr&);
 
   virtual bool isBinaryOperationInstr() const;
+  virtual bool isCallInstr() const;
   virtual bool isPrintInstr() const;
 
   virtual const BinaryOperation& asBinaryOperationInstr() const;
   virtual BinaryOperation& asBinaryOperationInstr();
+  virtual const CallInstr& asCallInstr() const;
+  virtual CallInstr& asCallInstr();
   virtual const Register& asPrintInstr() const;
   virtual Register& asPrintInstr();
 
@@ -132,6 +160,7 @@ public:
   virtual ~Instr();
 
   static Instr createBinaryOperationInstr(const BinaryOperation&);
+  static Instr createCallInstr(const CallInstr&);
   static Instr createPrintInstr(const Register&);
 
 };

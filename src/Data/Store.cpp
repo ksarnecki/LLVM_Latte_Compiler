@@ -13,6 +13,9 @@
 //------------- Register ---------------
 //----------------------------------
 
+//------------- RegisterKind ---------------
+//----------------------------------
+
 //------------- BasicObject ---------------
 const int BasicObject::_TypeInt = 0;
 const int BasicObject::_TypeBool = 1;
@@ -175,13 +178,13 @@ BasicObject BasicObject::createString(const Register& _param) {
 //----------------------------------
 
 //------------- FunctionObject ---------------
-FunctionObject::FunctionObject(const AnsiString& _name) : name(_name) {
+FunctionObject::FunctionObject(const RegisterKind& _type) : type(_type) {
 }
-const AnsiString& FunctionObject::getName() const {
-  return name;
+const RegisterKind& FunctionObject::getType() const {
+  return type;
 }
-AnsiString& FunctionObject::getName() {
-  return name;
+RegisterKind& FunctionObject::getType() {
+  return type;
 }
 FunctionObject::~FunctionObject() {
 }

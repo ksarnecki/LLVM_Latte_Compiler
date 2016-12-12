@@ -55,10 +55,11 @@ void CodeBuilder::visitFnDef(FnDef *fndef)
   */
   actBlocks = LLVMBlockArray();
   initBlock(fName+"_entry");
+  updateEnviroment(fName, Object::createFunction(FunctionObject(fRetType)));
   fndef->block_->accept(this);
   LLVMBlockArray fBlocks = actBlocks;
-
   program.Insert(LLVMFunction(fName, fRetType, fArgs, fBlocks));
+
 
 }
 
@@ -92,6 +93,10 @@ void CodeBuilder::visitDecl(Decl *decl)
   for (ListItem::iterator i = decl->listitem_->begin() ; i != decl->listitem_->end() ; ++i)
     if(Init *item = dynamic_cast<Init*>(*i))
       item->expr_->accept(this);
+
+  //TODO -> updateEnviroment
+
+
 
   /*decl->lattetype_->accept(this);
   Type declType = actType;
@@ -252,7 +257,13 @@ void CodeBuilder::visitELitFalse(ELitFalse *elitfalse)
 
 void CodeBuilder::visitEApp(EApp *eapp)
 {
-  visitIdent(eapp->ident_);
+  RegisterKind fType = getObjectByIdent(eapp->ident_).asFunction().getType();
+  AnsiString fName = eapp->ident_;
+  Registers fArgs;
+  for (ListExpr::iterator i = eapp->listexpr_->begin() ; i != eapp->listexpr_->end() ; ++i) {
+    fArgs.Insert(Register(0, RegisterKind::createValueI32())); //todo poprawić
+  }
+  addInstr(Instr::createCallInstr(CallInstr(fType, fName, fArgs)));
   /*Type type = Manager::getTypeByIdent(eapp->ident_, enviroment, store);
   if(type.isFunction()) {
     FunctionType ftype = type.asFunction();
@@ -548,9 +559,12 @@ RegisterKind CodeBuilder::getBinaryOperationRegisterKind(const Register& r1, con
 }
 
 RegisterKind CodeBuilder::getRegisterKindFromLatteType(const LatteType* type) {
-  //TODO
-  return RegisterKind::createValueI32();
-
+  if(const IntType *arg = dynamic_cast<const IntType*>(type))
+    return RegisterKind::createValueI32();
+  if(const StrType *arg = dynamic_cast<const StrType*>(type))
+    return RegisterKind::createPtr(RegisterKind::createValueI8());
+  if(const BoolType *arg = dynamic_cast<const BoolType*>(type))
+    return RegisterKind::createValueI1();
   throw Exception("[getRegisterKindFromType] Unknown type.");
 }
 
@@ -560,4 +574,25 @@ void CodeBuilder::initBlock(const AnsiString& name) {
 
 void CodeBuilder::addInstr(const Instr instr) {
   actBlocks[actBlocks.Size()-1].getBody().Insert(instr);
+}
+
+void CodeBuilder::updateEnviroment(const AnsiString& ident, const Object& object) {
+  int storeId = store.Size();
+  store.Insert(StoreElement(storeId, object));
+  for(int i=0;i<enviroment.Size();i++) {
+    if(enviroment[i].getIdent()==ident) {
+      enviroment[i].getStoreId() = storeId;
+      return;
+    }
+  }
+  enviroment.Insert(BuilderEnviromentElement(ident, storeId));
+}
+
+Object CodeBuilder::getObjectByIdent(const AnsiString& ident) {
+  for(int i=0;i<enviroment.Size();i++) {
+    if(enviroment[i].getIdent()==ident) {
+      return store[enviroment[i].getStoreId()].getObj();
+    }
+  }
+  throw Exception("[CodeBuilder::getObjectByIdent] Ident "+ident+" not found.");
 }

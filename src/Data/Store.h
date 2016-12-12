@@ -16,6 +16,10 @@
 #include "Register.h"
 //----------------------------------
 
+//------------- RegisterKind ---------------
+#include "Register.h"
+//----------------------------------
+
 //------------- BasicObject ---------------
 class BasicObject {
   int _type;
@@ -65,11 +69,11 @@ public:
 
 //------------- FunctionObject ---------------
 class FunctionObject {
-  AnsiString name;
+  RegisterKind type;
 public:
-  FunctionObject(const AnsiString&);
-  virtual const AnsiString& getName() const;
-  virtual AnsiString& getName();
+  FunctionObject(const RegisterKind&);
+  virtual const RegisterKind& getType() const;
+  virtual RegisterKind& getType();
 
 
   virtual ~FunctionObject();

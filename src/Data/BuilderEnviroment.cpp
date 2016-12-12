@@ -7,16 +7,13 @@
 //------------- string ---------------
 //----------------------------------
 
-//------------- Ident ---------------
-//----------------------------------
-
 //------------- BuilderEnviromentElement ---------------
-BuilderEnviromentElement::BuilderEnviromentElement(const Ident& _ident, const int& _storeId) : ident(_ident), storeId(_storeId) {
+BuilderEnviromentElement::BuilderEnviromentElement(const AnsiString& _ident, const int& _storeId) : ident(_ident), storeId(_storeId) {
 }
-const Ident& BuilderEnviromentElement::getIdent() const {
+const AnsiString& BuilderEnviromentElement::getIdent() const {
   return ident;
 }
-Ident& BuilderEnviromentElement::getIdent() {
+AnsiString& BuilderEnviromentElement::getIdent() {
   return ident;
 }
 const int& BuilderEnviromentElement::getStoreId() const {

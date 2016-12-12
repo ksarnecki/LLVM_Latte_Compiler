@@ -15,7 +15,7 @@ const int RegisterKind::_TypeValueI1 = 0;
 const int RegisterKind::_TypeValueI8 = 1;
 const int RegisterKind::_TypeValueI32 = 2;
 const int RegisterKind::_TypeValueDouble = 3;
-const int RegisterKind::_TypePtrI32 = 4;
+const int RegisterKind::_TypePtr = 4;
 const int RegisterKind::_TypeNull = 5;
 void RegisterKind::init(int type, void* ptr) {
   if (type==_TypeValueI1) {
@@ -30,9 +30,9 @@ void RegisterKind::init(int type, void* ptr) {
   } else if (type==_TypeValueDouble) {
     _type = type;
     _ptr = 0;
-  } else if (type==_TypePtrI32) {
+  } else if (type==_TypePtr) {
     _type = type;
-    _ptr = 0;
+    _ptr = new RegisterKind(*(RegisterKind*) ptr);
   } else if (type==_TypeNull) {
     _type = type;
     _ptr = 0;
@@ -55,10 +55,10 @@ void RegisterKind::clean() {
     _type = -1;
     if (_ptr!=0)
       throw Exception("RegisterKind::clean()");
-  } else if (_type==_TypePtrI32) {
+  } else if (_type==_TypePtr) {
     _type = -1;
-    if (_ptr!=0)
-      throw Exception("RegisterKind::clean()");
+    delete (RegisterKind*) _ptr;
+    _ptr = 0;
   } else if (_type==_TypeNull) {
     _type = -1;
     if (_ptr!=0)
@@ -87,11 +87,21 @@ bool RegisterKind::isValueI32() const {
 bool RegisterKind::isValueDouble() const {
   return _type==_TypeValueDouble;
 }
-bool RegisterKind::isPtrI32() const {
-  return _type==_TypePtrI32;
+bool RegisterKind::isPtr() const {
+  return _type==_TypePtr;
 }
 bool RegisterKind::isNull() const {
   return _type==_TypeNull;
+}
+const RegisterKind& RegisterKind::asPtr() const {
+  if (_type!=_TypePtr)
+    throw Exception("RegisterKind::asPtr");
+  return *(RegisterKind*) _ptr;
+}
+RegisterKind& RegisterKind::asPtr() {
+  if (_type!=_TypePtr)
+    throw Exception("RegisterKind::asPtr");
+  return *(RegisterKind*) _ptr;
 }
 
 
@@ -122,10 +132,10 @@ RegisterKind RegisterKind::createValueDouble() {
   _value._ptr = 0;
   return _value;
 }
-RegisterKind RegisterKind::createPtrI32() {
+RegisterKind RegisterKind::createPtr(const RegisterKind& _param) {
   RegisterKind _value;
-  _value._type = _TypePtrI32;
-  _value._ptr = 0;
+  _value._type = _TypePtr;
+  _value._ptr = new RegisterKind(_param);
   return _value;
 }
 RegisterKind RegisterKind::createNull() {

@@ -105,6 +105,8 @@ public:
   void initBlock(const AnsiString&);
   void addInstr(const Instr);
 
+  void updateEnviroment(const AnsiString&, const Object&);
+  Object getObjectByIdent(const AnsiString&);
 };
 
 

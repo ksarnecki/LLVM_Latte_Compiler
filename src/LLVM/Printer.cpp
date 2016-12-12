@@ -5,8 +5,17 @@ AnsiString Printer::renderFunctionArgument(const LLVMFunctionArgument& arg) {
 }
 
 AnsiString Printer::renderRegisterKind(const RegisterKind& kind) {
-  //TODO
-  return "i32";
+  if(kind.isPtr())
+    return renderRegisterKind(kind.asPtr()) + "*";
+  if(kind.isValueI1())
+    return "i1";
+  if(kind.isValueI8())
+    return "i8";
+  if(kind.isValueI32())
+    return "i32";
+  if(kind.isValueDouble())
+    return "double";
+  throw Exception("[Printer::renderRegisterKind] Unsupported register kind.");
 }
 
 AnsiString Printer::renderBlock(const LLVMBlock& block) {
@@ -41,6 +50,8 @@ AnsiString Printer::renderBody(const InstrArray& instrs) {
       outString += "  " + renderBinaryOperationInstr(instr.asBinaryOperationInstr());
     } else if (instr.isPrintInstr()) {
       outString += "  " + renderPrintInstr(instr.asPrintInstr());
+    } else if (instr.isCallInstr()) {
+      outString += "  " + renderCallInstr(instr.asCallInstr());
     } else {
       throw Exception("[LLVMProgramPrinter::print] Unknown instr type!");
     }
@@ -48,6 +59,20 @@ AnsiString Printer::renderBody(const InstrArray& instrs) {
   }
   outString += "  ret i32 0\n";
   outString += "}";
+  return outString;
+}
+
+AnsiString Printer::renderCallInstr(const CallInstr& instr) {
+  AnsiString outString = "call ";
+  outString += renderRegisterKind(instr.getRetType());
+  outString += " @" + instr.getFunction() + "(";
+  for(int i=0;i<instr.getArgs().Size();i++) {
+    if(i>0)
+      outString += ",";
+    outString += renderRegisterKind(instr.getArgs()[i].getKind()) + " ";
+    outString += renderRegister(instr.getArgs()[i]);
+  }
+  outString += ")";
   return outString;
 }
 

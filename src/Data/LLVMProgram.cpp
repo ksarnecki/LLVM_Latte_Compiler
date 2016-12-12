@@ -13,6 +13,9 @@
 //------------- RegisterKind ---------------
 //----------------------------------
 
+//------------- Registers ---------------
+//----------------------------------
+
 //------------- BinaryOperationArgument ---------------
 const int BinaryOperationArgument::_TypeRegister = 0;
 const int BinaryOperationArgument::_TypeNumber = 1;
@@ -218,13 +221,42 @@ BinaryOperation::~BinaryOperation() {
 }
 //----------------------------------
 
+//------------- CallInstr ---------------
+CallInstr::CallInstr(const RegisterKind& _retType, const AnsiString& _function, const Registers& _args) : retType(_retType), function(_function), args(_args) {
+}
+const RegisterKind& CallInstr::getRetType() const {
+  return retType;
+}
+RegisterKind& CallInstr::getRetType() {
+  return retType;
+}
+const AnsiString& CallInstr::getFunction() const {
+  return function;
+}
+AnsiString& CallInstr::getFunction() {
+  return function;
+}
+const Registers& CallInstr::getArgs() const {
+  return args;
+}
+Registers& CallInstr::getArgs() {
+  return args;
+}
+CallInstr::~CallInstr() {
+}
+//----------------------------------
+
 //------------- Instr ---------------
 const int Instr::_TypeBinaryOperationInstr = 0;
-const int Instr::_TypePrintInstr = 1;
+const int Instr::_TypeCallInstr = 1;
+const int Instr::_TypePrintInstr = 2;
 void Instr::init(int type, void* ptr) {
   if (type==_TypeBinaryOperationInstr) {
     _type = type;
     _ptr = new BinaryOperation(*(BinaryOperation*) ptr);
+  } else if (type==_TypeCallInstr) {
+    _type = type;
+    _ptr = new CallInstr(*(CallInstr*) ptr);
   } else if (type==_TypePrintInstr) {
     _type = type;
     _ptr = new Register(*(Register*) ptr);
@@ -234,6 +266,10 @@ void Instr::clean() {
   if (_type==_TypeBinaryOperationInstr) {
     _type = -1;
     delete (BinaryOperation*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeCallInstr) {
+    _type = -1;
+    delete (CallInstr*) _ptr;
     _ptr = 0;
   } else if (_type==_TypePrintInstr) {
     _type = -1;
@@ -254,6 +290,9 @@ Instr& Instr::operator=(const Instr& _value) {
 bool Instr::isBinaryOperationInstr() const {
   return _type==_TypeBinaryOperationInstr;
 }
+bool Instr::isCallInstr() const {
+  return _type==_TypeCallInstr;
+}
 bool Instr::isPrintInstr() const {
   return _type==_TypePrintInstr;
 }
@@ -266,6 +305,16 @@ BinaryOperation& Instr::asBinaryOperationInstr() {
   if (_type!=_TypeBinaryOperationInstr)
     throw Exception("Instr::asBinaryOperationInstr");
   return *(BinaryOperation*) _ptr;
+}
+const CallInstr& Instr::asCallInstr() const {
+  if (_type!=_TypeCallInstr)
+    throw Exception("Instr::asCallInstr");
+  return *(CallInstr*) _ptr;
+}
+CallInstr& Instr::asCallInstr() {
+  if (_type!=_TypeCallInstr)
+    throw Exception("Instr::asCallInstr");
+  return *(CallInstr*) _ptr;
 }
 const Register& Instr::asPrintInstr() const {
   if (_type!=_TypePrintInstr)
@@ -286,6 +335,12 @@ Instr Instr::createBinaryOperationInstr(const BinaryOperation& _param) {
   Instr _value;
   _value._type = _TypeBinaryOperationInstr;
   _value._ptr = new BinaryOperation(_param);
+  return _value;
+}
+Instr Instr::createCallInstr(const CallInstr& _param) {
+  Instr _value;
+  _value._type = _TypeCallInstr;
+  _value._ptr = new CallInstr(_param);
   return _value;
 }
 Instr Instr::createPrintInstr(const Register& _param) {

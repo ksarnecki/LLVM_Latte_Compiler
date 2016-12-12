@@ -7,12 +7,8 @@ basic
 string 
 basic
 
-Ident
-external
-Absyn.H
-
 BuilderEnviromentElement = record {
-	ident : Ident,
+	ident : string,
 	storeId : int
 }
 
