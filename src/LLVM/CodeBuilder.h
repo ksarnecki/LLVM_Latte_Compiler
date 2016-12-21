@@ -103,10 +103,17 @@ public:
   RegisterKind getRegisterKindFromLatteType(const LatteType*);
 
   void initBlock(const AnsiString&);
+  AnsiString getNextBlockNameByPrefix(const AnsiString&);
   void addInstr(const Instr);
 
+  const AnsiString whileToken = "while";
+
+  
+
   void updateEnviroment(const AnsiString&, const Object&);
+
   Object getObjectByIdent(const AnsiString&);
+  Register getRegisterByIdent(const AnsiString&);
 };
 
 

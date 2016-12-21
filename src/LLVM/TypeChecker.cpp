@@ -151,7 +151,7 @@ void TypeChecker::visitCondElse(CondElse *condelse)
 void TypeChecker::visitWhileStmnt(WhileStmnt *whilestmnt)
 {
   whilestmnt->expr_->accept(this);
-  if(TypeCheckerManager::bsc(actType)) {
+  if(!TypeCheckerManager::bsc(actType)) {
     addError(whilestmnt->expr_->line_number, "Bad expression type");
   }
   whilestmnt->stmt_->accept(this);
@@ -309,6 +309,7 @@ void TypeChecker::visitERel(ERel *erel)
   if(!TypeCheckerManager::cst(exp1, exp2)) { 
     addError(erel->expr_2->line_number, "Bad rel expression arg type");
   }
+  actType = Type::createBasic(BasicType::createBool());
 }
 
 void TypeChecker::visitEAnd(EAnd *eand)

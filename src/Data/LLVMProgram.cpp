@@ -101,6 +101,13 @@ const int BinaryOperator::_TypeAdd = 0;
 const int BinaryOperator::_TypeSub = 1;
 const int BinaryOperator::_TypeDiv = 2;
 const int BinaryOperator::_TypeMul = 3;
+const int BinaryOperator::_TypeMod = 4;
+const int BinaryOperator::_TypeLth = 5;
+const int BinaryOperator::_TypeLe = 6;
+const int BinaryOperator::_TypeGth = 7;
+const int BinaryOperator::_TypeGe = 8;
+const int BinaryOperator::_TypeEqu = 9;
+const int BinaryOperator::_TypeNe = 10;
 void BinaryOperator::init(int type, void* ptr) {
   if (type==_TypeAdd) {
     _type = type;
@@ -112,6 +119,27 @@ void BinaryOperator::init(int type, void* ptr) {
     _type = type;
     _ptr = 0;
   } else if (type==_TypeMul) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeMod) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeLth) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeLe) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeGth) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeGe) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeEqu) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeNe) {
     _type = type;
     _ptr = 0;
   }
@@ -130,6 +158,34 @@ void BinaryOperator::clean() {
     if (_ptr!=0)
       throw Exception("BinaryOperator::clean()");
   } else if (_type==_TypeMul) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("BinaryOperator::clean()");
+  } else if (_type==_TypeMod) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("BinaryOperator::clean()");
+  } else if (_type==_TypeLth) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("BinaryOperator::clean()");
+  } else if (_type==_TypeLe) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("BinaryOperator::clean()");
+  } else if (_type==_TypeGth) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("BinaryOperator::clean()");
+  } else if (_type==_TypeGe) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("BinaryOperator::clean()");
+  } else if (_type==_TypeEqu) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("BinaryOperator::clean()");
+  } else if (_type==_TypeNe) {
     _type = -1;
     if (_ptr!=0)
       throw Exception("BinaryOperator::clean()");
@@ -157,6 +213,27 @@ bool BinaryOperator::isDiv() const {
 bool BinaryOperator::isMul() const {
   return _type==_TypeMul;
 }
+bool BinaryOperator::isMod() const {
+  return _type==_TypeMod;
+}
+bool BinaryOperator::isLth() const {
+  return _type==_TypeLth;
+}
+bool BinaryOperator::isLe() const {
+  return _type==_TypeLe;
+}
+bool BinaryOperator::isGth() const {
+  return _type==_TypeGth;
+}
+bool BinaryOperator::isGe() const {
+  return _type==_TypeGe;
+}
+bool BinaryOperator::isEqu() const {
+  return _type==_TypeEqu;
+}
+bool BinaryOperator::isNe() const {
+  return _type==_TypeNe;
+}
 
 
 BinaryOperator::~BinaryOperator() {
@@ -183,6 +260,48 @@ BinaryOperator BinaryOperator::createDiv() {
 BinaryOperator BinaryOperator::createMul() {
   BinaryOperator _value;
   _value._type = _TypeMul;
+  _value._ptr = 0;
+  return _value;
+}
+BinaryOperator BinaryOperator::createMod() {
+  BinaryOperator _value;
+  _value._type = _TypeMod;
+  _value._ptr = 0;
+  return _value;
+}
+BinaryOperator BinaryOperator::createLth() {
+  BinaryOperator _value;
+  _value._type = _TypeLth;
+  _value._ptr = 0;
+  return _value;
+}
+BinaryOperator BinaryOperator::createLe() {
+  BinaryOperator _value;
+  _value._type = _TypeLe;
+  _value._ptr = 0;
+  return _value;
+}
+BinaryOperator BinaryOperator::createGth() {
+  BinaryOperator _value;
+  _value._type = _TypeGth;
+  _value._ptr = 0;
+  return _value;
+}
+BinaryOperator BinaryOperator::createGe() {
+  BinaryOperator _value;
+  _value._type = _TypeGe;
+  _value._ptr = 0;
+  return _value;
+}
+BinaryOperator BinaryOperator::createEqu() {
+  BinaryOperator _value;
+  _value._type = _TypeEqu;
+  _value._ptr = 0;
+  return _value;
+}
+BinaryOperator BinaryOperator::createNe() {
+  BinaryOperator _value;
+  _value._type = _TypeNe;
   _value._ptr = 0;
   return _value;
 }
@@ -246,10 +365,50 @@ CallInstr::~CallInstr() {
 }
 //----------------------------------
 
+//------------- BrIfInstr ---------------
+BrIfInstr::BrIfInstr(const Register& _cond, const AnsiString& _ifTrueBlock, const AnsiString& _ifFalseBlock) : cond(_cond), ifTrueBlock(_ifTrueBlock), ifFalseBlock(_ifFalseBlock) {
+}
+const Register& BrIfInstr::getCond() const {
+  return cond;
+}
+Register& BrIfInstr::getCond() {
+  return cond;
+}
+const AnsiString& BrIfInstr::getIfTrueBlock() const {
+  return ifTrueBlock;
+}
+AnsiString& BrIfInstr::getIfTrueBlock() {
+  return ifTrueBlock;
+}
+const AnsiString& BrIfInstr::getIfFalseBlock() const {
+  return ifFalseBlock;
+}
+AnsiString& BrIfInstr::getIfFalseBlock() {
+  return ifFalseBlock;
+}
+BrIfInstr::~BrIfInstr() {
+}
+//----------------------------------
+
+//------------- BrInstr ---------------
+BrInstr::BrInstr(const AnsiString& _block) : block(_block) {
+}
+const AnsiString& BrInstr::getBlock() const {
+  return block;
+}
+AnsiString& BrInstr::getBlock() {
+  return block;
+}
+BrInstr::~BrInstr() {
+}
+//----------------------------------
+
 //------------- Instr ---------------
 const int Instr::_TypeBinaryOperationInstr = 0;
 const int Instr::_TypeCallInstr = 1;
-const int Instr::_TypePrintInstr = 2;
+const int Instr::_TypeBrInstr = 2;
+const int Instr::_TypeBrIfInstr = 3;
+const int Instr::_TypePrintInstr = 4;
 void Instr::init(int type, void* ptr) {
   if (type==_TypeBinaryOperationInstr) {
     _type = type;
@@ -257,6 +416,12 @@ void Instr::init(int type, void* ptr) {
   } else if (type==_TypeCallInstr) {
     _type = type;
     _ptr = new CallInstr(*(CallInstr*) ptr);
+  } else if (type==_TypeBrInstr) {
+    _type = type;
+    _ptr = new BrInstr(*(BrInstr*) ptr);
+  } else if (type==_TypeBrIfInstr) {
+    _type = type;
+    _ptr = new BrIfInstr(*(BrIfInstr*) ptr);
   } else if (type==_TypePrintInstr) {
     _type = type;
     _ptr = new Register(*(Register*) ptr);
@@ -270,6 +435,14 @@ void Instr::clean() {
   } else if (_type==_TypeCallInstr) {
     _type = -1;
     delete (CallInstr*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeBrInstr) {
+    _type = -1;
+    delete (BrInstr*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeBrIfInstr) {
+    _type = -1;
+    delete (BrIfInstr*) _ptr;
     _ptr = 0;
   } else if (_type==_TypePrintInstr) {
     _type = -1;
@@ -293,6 +466,12 @@ bool Instr::isBinaryOperationInstr() const {
 bool Instr::isCallInstr() const {
   return _type==_TypeCallInstr;
 }
+bool Instr::isBrInstr() const {
+  return _type==_TypeBrInstr;
+}
+bool Instr::isBrIfInstr() const {
+  return _type==_TypeBrIfInstr;
+}
 bool Instr::isPrintInstr() const {
   return _type==_TypePrintInstr;
 }
@@ -315,6 +494,26 @@ CallInstr& Instr::asCallInstr() {
   if (_type!=_TypeCallInstr)
     throw Exception("Instr::asCallInstr");
   return *(CallInstr*) _ptr;
+}
+const BrInstr& Instr::asBrInstr() const {
+  if (_type!=_TypeBrInstr)
+    throw Exception("Instr::asBrInstr");
+  return *(BrInstr*) _ptr;
+}
+BrInstr& Instr::asBrInstr() {
+  if (_type!=_TypeBrInstr)
+    throw Exception("Instr::asBrInstr");
+  return *(BrInstr*) _ptr;
+}
+const BrIfInstr& Instr::asBrIfInstr() const {
+  if (_type!=_TypeBrIfInstr)
+    throw Exception("Instr::asBrIfInstr");
+  return *(BrIfInstr*) _ptr;
+}
+BrIfInstr& Instr::asBrIfInstr() {
+  if (_type!=_TypeBrIfInstr)
+    throw Exception("Instr::asBrIfInstr");
+  return *(BrIfInstr*) _ptr;
 }
 const Register& Instr::asPrintInstr() const {
   if (_type!=_TypePrintInstr)
@@ -341,6 +540,18 @@ Instr Instr::createCallInstr(const CallInstr& _param) {
   Instr _value;
   _value._type = _TypeCallInstr;
   _value._ptr = new CallInstr(_param);
+  return _value;
+}
+Instr Instr::createBrInstr(const BrInstr& _param) {
+  Instr _value;
+  _value._type = _TypeBrInstr;
+  _value._ptr = new BrInstr(_param);
+  return _value;
+}
+Instr Instr::createBrIfInstr(const BrIfInstr& _param) {
+  Instr _value;
+  _value._type = _TypeBrIfInstr;
+  _value._ptr = new BrIfInstr(_param);
   return _value;
 }
 Instr Instr::createPrintInstr(const Register& _param) {

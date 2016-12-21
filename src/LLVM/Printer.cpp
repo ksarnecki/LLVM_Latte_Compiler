@@ -24,7 +24,7 @@ AnsiString Printer::renderBlock(const LLVMBlock& block) {
 
 void Printer::printFunction(const LLVMFunction& function) {
   AnsiString outString = "define ";
-  outString += renderRegisterKind(function.getType()) + " " + function.getName() + "(";
+  outString += renderRegisterKind(function.getType()) + " @" + function.getName() + "(";
   for(int i=0;i<function.getArgs().Size();i++) {
     if(i>0)
       outString += ", ";
@@ -33,6 +33,7 @@ void Printer::printFunction(const LLVMFunction& function) {
   outString += ") {\n";
   for(int i=0;i<function.getBlocks().Size();i++)
     outString += renderBlock(function.getBlocks()[i]);
+  outString += "}\n";
   printf("%s\n", outString.c_str());
 }
 
@@ -52,13 +53,15 @@ AnsiString Printer::renderBody(const InstrArray& instrs) {
       outString += "  " + renderPrintInstr(instr.asPrintInstr());
     } else if (instr.isCallInstr()) {
       outString += "  " + renderCallInstr(instr.asCallInstr());
+    } else if (instr.isBrInstr()) {
+      outString += "  " + renderBrInstr(instr.asBrInstr());
+    } else if (instr.isBrIfInstr()) {
+      outString += "  " + renderBrIfInstr(instr.asBrIfInstr());
     } else {
       throw Exception("[LLVMProgramPrinter::print] Unknown instr type!");
     }
     outString += "\n";
   }
-  outString += "  ret i32 0\n";
-  outString += "}";
   return outString;
 }
 
@@ -80,6 +83,14 @@ AnsiString Printer::renderPrintInstr(const Register& reg) {
   return "call void @printInt(i32 " + renderRegister(reg) + ")";
 }
 
+AnsiString Printer::renderBrInstr(const BrInstr& br) {
+  return "br label %" + br.getBlock();
+}
+
+AnsiString Printer::renderBrIfInstr(const BrIfInstr& br) {
+  return "br i1 " + renderRegister(br.getCond()) + ", label %" + br.getIfTrueBlock() + ", label %" + br.getIfFalseBlock();
+}
+
 AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation) {
   AnsiString ret;
   ret += renderRegister(operation.getOutReg()) + " = ";
@@ -90,6 +101,7 @@ AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation)
 }
 
 AnsiString Printer::renderBinaryOperator(const BinaryOperator& binaryOperator) {
+  // add, sub, div, mul, mod, lth, le, gth, ge, equ, ne
   if (binaryOperator.isAdd()) { 
     return "add i32";
   } else if (binaryOperator.isDiv()) {
@@ -98,6 +110,18 @@ AnsiString Printer::renderBinaryOperator(const BinaryOperator& binaryOperator) {
     return "sub i32";
   } else if (binaryOperator.isMul()) {
     return "mul i32";
+  } else if (binaryOperator.isLth()) {
+    return "icmp lt i32";
+  } else if (binaryOperator.isLe()) {
+    return "icmp leq i32";
+  } else if (binaryOperator.isGth()) {
+    return "icmp gt i32";
+  } else if (binaryOperator.isGe()) {
+    return "icmp ge i32";
+  } else if (binaryOperator.isEqu()) {
+    return "icmp eq i32";
+  } else if (binaryOperator.isNe()) {
+    return "icmp neq i32";
   } else {
     throw Exception("[LLVMProgramPrinter::renderBinaryOperationArgument] Unknown argument type!");
   }

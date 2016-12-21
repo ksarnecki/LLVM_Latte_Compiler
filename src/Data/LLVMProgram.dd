@@ -26,7 +26,7 @@ BinaryOperationArgument = variant {
 }
 
 BinaryOperator = variant {
-  add, sub, div, mul
+  add, sub, div, mul, mod, lth, le, gth, ge, equ, ne
 }
 
 BinaryOperation = record {
@@ -42,9 +42,21 @@ CallInstr = record {
   args : Registers
 }
 
+BrIfInstr = record {
+  cond : Register,
+  ifTrueBlock : string,
+  ifFalseBlock : string  
+}
+
+BrInstr = record {
+  block : string
+}
+
 Instr = variant {
   binaryOperationInstr : BinaryOperation,
   callInstr : CallInstr,
+  brInstr : BrInstr,
+  brIfInstr : BrIfInstr,
   printInstr : Register
 }
 

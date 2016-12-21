@@ -61,6 +61,13 @@ class BinaryOperator {
   static const int _TypeSub;
   static const int _TypeDiv;
   static const int _TypeMul;
+  static const int _TypeMod;
+  static const int _TypeLth;
+  static const int _TypeLe;
+  static const int _TypeGth;
+  static const int _TypeGe;
+  static const int _TypeEqu;
+  static const int _TypeNe;
 
   virtual void init(int, void*);
   virtual void clean();
@@ -73,6 +80,13 @@ public:
   virtual bool isSub() const;
   virtual bool isDiv() const;
   virtual bool isMul() const;
+  virtual bool isMod() const;
+  virtual bool isLth() const;
+  virtual bool isLe() const;
+  virtual bool isGth() const;
+  virtual bool isGe() const;
+  virtual bool isEqu() const;
+  virtual bool isNe() const;
 
 
 
@@ -82,6 +96,13 @@ public:
   static BinaryOperator createSub();
   static BinaryOperator createDiv();
   static BinaryOperator createMul();
+  static BinaryOperator createMod();
+  static BinaryOperator createLth();
+  static BinaryOperator createLe();
+  static BinaryOperator createGth();
+  static BinaryOperator createGe();
+  static BinaryOperator createEqu();
+  static BinaryOperator createNe();
 
 };
 //----------------------------------
@@ -129,6 +150,40 @@ public:
 };
 //----------------------------------
 
+//------------- BrIfInstr ---------------
+class BrIfInstr {
+  Register cond;
+  AnsiString ifTrueBlock;
+  AnsiString ifFalseBlock;
+public:
+  BrIfInstr(const Register&, const AnsiString&, const AnsiString&);
+  virtual const Register& getCond() const;
+  virtual const AnsiString& getIfTrueBlock() const;
+  virtual const AnsiString& getIfFalseBlock() const;
+  virtual Register& getCond();
+  virtual AnsiString& getIfTrueBlock();
+  virtual AnsiString& getIfFalseBlock();
+
+
+  virtual ~BrIfInstr();
+
+};
+//----------------------------------
+
+//------------- BrInstr ---------------
+class BrInstr {
+  AnsiString block;
+public:
+  BrInstr(const AnsiString&);
+  virtual const AnsiString& getBlock() const;
+  virtual AnsiString& getBlock();
+
+
+  virtual ~BrInstr();
+
+};
+//----------------------------------
+
 //------------- Instr ---------------
 class Instr {
   int _type;
@@ -136,6 +191,8 @@ class Instr {
 
   static const int _TypeBinaryOperationInstr;
   static const int _TypeCallInstr;
+  static const int _TypeBrInstr;
+  static const int _TypeBrIfInstr;
   static const int _TypePrintInstr;
 
   virtual void init(int, void*);
@@ -147,12 +204,18 @@ public:
 
   virtual bool isBinaryOperationInstr() const;
   virtual bool isCallInstr() const;
+  virtual bool isBrInstr() const;
+  virtual bool isBrIfInstr() const;
   virtual bool isPrintInstr() const;
 
   virtual const BinaryOperation& asBinaryOperationInstr() const;
   virtual BinaryOperation& asBinaryOperationInstr();
   virtual const CallInstr& asCallInstr() const;
   virtual CallInstr& asCallInstr();
+  virtual const BrInstr& asBrInstr() const;
+  virtual BrInstr& asBrInstr();
+  virtual const BrIfInstr& asBrIfInstr() const;
+  virtual BrIfInstr& asBrIfInstr();
   virtual const Register& asPrintInstr() const;
   virtual Register& asPrintInstr();
 
@@ -161,6 +224,8 @@ public:
 
   static Instr createBinaryOperationInstr(const BinaryOperation&);
   static Instr createCallInstr(const CallInstr&);
+  static Instr createBrInstr(const BrInstr&);
+  static Instr createBrIfInstr(const BrIfInstr&);
   static Instr createPrintInstr(const Register&);
 
 };

@@ -13,6 +13,8 @@ private:
   static AnsiString renderBinaryOperationArgument(const BinaryOperationArgument&);
   static AnsiString renderBinaryOperator(const BinaryOperator&);
   static AnsiString renderCallInstr(const CallInstr&);
+  static AnsiString renderBrInstr(const BrInstr&);
+  static AnsiString renderBrIfInstr(const BrIfInstr&);
 
   static AnsiString renderFunctionArgument(const LLVMFunctionArgument&);
   static AnsiString renderRegisterKind(const RegisterKind&);
