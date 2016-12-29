@@ -45,8 +45,12 @@ void CodeBuilder::visitFnDef(FnDef *fndef)
   */
   LLVMFunctionArgumentArray fArgs = LLVMFunctionArgumentArray();
   for (ListArg::iterator i = fndef->listarg_->begin() ; i != fndef->listarg_->end() ; ++i)
-    if(Ar *arg = dynamic_cast<Ar*>(*i))
-      fArgs.Insert(LLVMFunctionArgument(getRegisterKindFromLatteType(arg->lattetype_), arg->ident_));
+    if(Ar *arg = dynamic_cast<Ar*>(*i)) {
+      RegisterKind rk = getRegisterKindFromLatteType(arg->lattetype_);
+      Register r = getNextRegister(rk);
+      updateEnviroment(arg->ident_, Object::createBasic(BasicObject::createInt(r)));
+      fArgs.Insert(LLVMFunctionArgument(r, arg->ident_));
+    }
     else
       throw Exception("[CodeBuilder::visitFnDef] Unknown arg kind.");
 
@@ -122,7 +126,7 @@ void CodeBuilder::visitDecl(Decl *decl)
 void CodeBuilder::visitAss(Ass *ass)
 {
   ass->expr_->accept(this);
-  updateEnviroment(ass->ident_, Object::createBasic(BasicObject::createInt(registerData.getLastRegister())));
+  updateStore(ass->ident_, Object::createBasic(BasicObject::createInt(registerData.getLastRegister())));
 }
 
 void CodeBuilder::visitIncr(Incr *incr)
@@ -144,7 +148,7 @@ void CodeBuilder::visitDecr(Decr *decr)
 void CodeBuilder::visitRet(Ret *ret)
 {
   ret->expr_->accept(this);
-  actRet = actType;
+  addInstr(Instr::createReturnInstr(registerData.getLastRegister()));
 }
 
 void CodeBuilder::visitVRet(VRet *vret)
@@ -183,22 +187,39 @@ void CodeBuilder::visitWhileStmnt(WhileStmnt *whilestmnt)
 
   //skok do while_cond
   addInstr(Instr::createBrInstr(BrInstr(wcondblock)));
-
+  BuilderEnviroment e = enviroment;
+  Store s = store;
+  /*
+  * Generujemy blok warunku
+  */
+  initBlock(wcondblock);
+  for(int i=0;i<e.Size();i++) {
+    if(getObjectByIdent(e[i].getIdent()).isBasic()) {
+      Register r = getNextRegister(RegisterKind::createValueI32());
+      PhiCases phiCases;
+      phiCases.Insert(PhiCase(getRegisterByIdent(e[i].getIdent()), actBlocks[actBlocks.Size()-2].getName()));
+      addInstr(Instr::createPhiInstr(PhiInstr(e[i].getIdent(), r, phiCases)));
+      updateEnviroment(e[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+    }
+  }
+  whilestmnt->expr_->accept(this);
+  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, wendblock)));
+  e = enviroment;
+  s = store;
   /*
   * Generujemy ciało while
   */
   initBlock(wbodyblock);
   whilestmnt->stmt_->accept(this);
-
-  /*
-  * Generujemy blok warunku
-  */
-  initBlock(wcondblock);
-  whilestmnt->expr_->accept(this);
-  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, wendblock)));
+  addInstr(Instr::createBrInstr(BrInstr(wcondblock)));
+  for(int i=0;i<enviroment.Size();i++) {
+    if(getObjectByIdent(enviroment[i].getIdent()).isBasic())
+      addPhiCase(enviroment[i].getIdent(), getRegisterByIdent(enviroment[i].getIdent()), wbodyblock, wcondblock);
+  }
 
   initBlock(wendblock);
-
+  enviroment = e;
+  store = s;
 }
 
 void CodeBuilder::visitSExp(SExp *sexp)
@@ -280,7 +301,8 @@ void CodeBuilder::visitEApp(EApp *eapp)
   AnsiString fName = eapp->ident_;
   Registers fArgs;
   for (ListExpr::iterator i = eapp->listexpr_->begin() ; i != eapp->listexpr_->end() ; ++i) {
-    fArgs.Insert(Register(0, RegisterKind::createValueI32())); //todo poprawić
+    (*i)->accept(this);
+    fArgs.Insert(registerData.getLastRegister());
   }
   addInstr(Instr::createCallInstr(CallInstr(fType, fName, fArgs)));
 }
@@ -545,6 +567,7 @@ void CodeBuilder::visitString(String x)
 
 void CodeBuilder::visitIdent(Ident x)
 {
+  fprintf(stderr, "VisitIdent %s reg %d\n", x.c_str(), getRegisterByIdent(x).getId());
   registerData.getLastRegister() = getRegisterByIdent(x);
 }
 
@@ -582,6 +605,9 @@ RegisterKind CodeBuilder::getRegisterKindFromLatteType(const LatteType* type) {
 }
 
 void CodeBuilder::initBlock(const AnsiString& name) {
+  /*
+  * Funkcja inicjuje początek generowania nowego bloku
+  */
   actBlocks.Insert(LLVMBlock(name, InstrArray()));
 }
 
@@ -601,6 +627,10 @@ void CodeBuilder::addInstr(const Instr instr) {
 }
 
 void CodeBuilder::updateEnviroment(const AnsiString& ident, const Object& object) {
+  /*
+  * Funcja aktualizuje aktualne środowisko
+  * Wykorzystywana np. do przesłaniania zmiennych
+  */
   int storeId = store.Size();
   store.Insert(StoreElement(storeId, object));
   for(int i=0;i<enviroment.Size();i++) {
@@ -610,6 +640,42 @@ void CodeBuilder::updateEnviroment(const AnsiString& ident, const Object& object
     }
   }
   enviroment.Insert(BuilderEnviromentElement(ident, storeId));
+}
+
+void CodeBuilder::updateStore(const AnsiString& ident, const Object& object) {
+  /*
+  * Funcja aktualizuje aktualną pamięć
+  * Wykorzystywana np. do akutalizowania rejestrów zmiennych podczas przypisań
+  */
+  for(int i=0;i<enviroment.Size();i++) {
+    if(enviroment[i].getIdent()==ident) {
+      for(int j=0;j<store.Size();j++) {
+        if(store[j].getId()==enviroment[i].getStoreId()) {
+          store[j].getObj() = object;
+          return;
+        }
+      }
+    }
+  }
+  updateEnviroment(ident, object);
+}
+
+void CodeBuilder::addPhiCase(const AnsiString& ident, const Register& reg, const AnsiString& fromBlock, const AnsiString& toBlock) {
+  /*
+  * Funcja dodaje kolejne opcje pochodzenia zmiennych
+  * Wykorzystywana do odpowiedniego generowanie operacji phi na początku bloku
+  */
+  for(int i=0;i<actBlocks.Size();i++)
+    if(actBlocks[i].getName()==toBlock) {
+      for(int j=0;j<actBlocks[i].getBody().Size();j++) {
+        if(actBlocks[i].getBody()[j].isPhiInstr()) {
+          if(actBlocks[i].getBody()[j].asPhiInstr().getIdent()==ident) {
+            actBlocks[i].getBody()[j].asPhiInstr().getCaseses().Insert(PhiCase(reg, fromBlock));
+          }
+        }
+      }
+      return;
+    }
 }
 
 Object CodeBuilder::getObjectByIdent(const AnsiString& ident) {
@@ -630,5 +696,5 @@ Register CodeBuilder::getRegisterByIdent(const AnsiString& ident) {
     } else
       throw Exception("[getRegisterByIdent] Unsupported basic object.");
   } else 
-    throw Exception("[getRegisterByIdent] Unsupported object.");
+    throw Exception("[getRegisterByIdent] Unsupported object " + ident + ".");
 }

@@ -1,8 +1,6 @@
 
 #include "Types.h"
 #include "Exception.h"
-#include "StringBuffer.h"
-#include "JSONUtil.h"
 //------------- int ---------------
 //----------------------------------
 
@@ -12,58 +10,11 @@
 //------------- Register ---------------
 //----------------------------------
 
+//------------- TypeCheckerEnviroment ---------------
+//----------------------------------
+
 //------------- TypeArray ---------------
 TypeArray::TypeArray() {
-}
-AnsiString TypeArray::toJSON() const {
-  StringBuffer _json;
-  _json += "[";
-  for (int _i=0;_i<Size();_i++) {
-    if (_i!=0) _json += ",";
-    _json += (*this)[_i].toJSON();
-  }
-    _json += "]";
-    return _json.get();
-}
-TypeArray TypeArray::fromJSON(AnsiString s) {
-  TypeArray arr = TypeArray();
-  int ix=1;
-  while(ix <= s.Length() && s[ix]!='[')
-    ix++;
-  ix++;
-  if (ix>s.Length()) 
-    throw Exception("TypeArray::fromJSON");
-  while (ix<=s.Length()) {
-    int start = ix;
-    bool inString = false;
-    int bracketLevel = 0;
-    while (ix<=s.Length()) {
-      if (s[ix]=='\\')
-        ix+=2;
-      else if (s[ix]=='"')
-        inString = !inString;
-      else if (!inString && s[ix]=='[')
-        bracketLevel++;
-      else if (!inString && s[ix]=='{')
-        bracketLevel++;
-      else if (!inString && s[ix]==']')
-        bracketLevel--;
-      else if (!inString && s[ix]=='}')
-        bracketLevel--;
-      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
-        if (start==ix)
-          return arr;
-        if (ix-start<=0)
-          throw Exception("TypeArray::fromJSON");
-        AnsiString tmp = s.SubString(start, ix-start);
-        arr.Insert(Type::fromJSON(tmp));
-        ix++;
-        break;
-      }
-      ix++;
-    }
-  }
-  return arr;
 }
 TypeArray::~TypeArray() {
 }
@@ -72,112 +23,12 @@ TypeArray::~TypeArray() {
 //------------- BasicTypeArray ---------------
 BasicTypeArray::BasicTypeArray() {
 }
-AnsiString BasicTypeArray::toJSON() const {
-  StringBuffer _json;
-  _json += "[";
-  for (int _i=0;_i<Size();_i++) {
-    if (_i!=0) _json += ",";
-    _json += (*this)[_i].toJSON();
-  }
-    _json += "]";
-    return _json.get();
-}
-BasicTypeArray BasicTypeArray::fromJSON(AnsiString s) {
-  BasicTypeArray arr = BasicTypeArray();
-  int ix=1;
-  while(ix <= s.Length() && s[ix]!='[')
-    ix++;
-  ix++;
-  if (ix>s.Length()) 
-    throw Exception("BasicTypeArray::fromJSON");
-  while (ix<=s.Length()) {
-    int start = ix;
-    bool inString = false;
-    int bracketLevel = 0;
-    while (ix<=s.Length()) {
-      if (s[ix]=='\\')
-        ix+=2;
-      else if (s[ix]=='"')
-        inString = !inString;
-      else if (!inString && s[ix]=='[')
-        bracketLevel++;
-      else if (!inString && s[ix]=='{')
-        bracketLevel++;
-      else if (!inString && s[ix]==']')
-        bracketLevel--;
-      else if (!inString && s[ix]=='}')
-        bracketLevel--;
-      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
-        if (start==ix)
-          return arr;
-        if (ix-start<=0)
-          throw Exception("BasicTypeArray::fromJSON");
-        AnsiString tmp = s.SubString(start, ix-start);
-        arr.Insert(BasicType::fromJSON(tmp));
-        ix++;
-        break;
-      }
-      ix++;
-    }
-  }
-  return arr;
-}
 BasicTypeArray::~BasicTypeArray() {
 }
 //----------------------------------
 
 //------------- FunctionTypeArray ---------------
 FunctionTypeArray::FunctionTypeArray() {
-}
-AnsiString FunctionTypeArray::toJSON() const {
-  StringBuffer _json;
-  _json += "[";
-  for (int _i=0;_i<Size();_i++) {
-    if (_i!=0) _json += ",";
-    _json += (*this)[_i].toJSON();
-  }
-    _json += "]";
-    return _json.get();
-}
-FunctionTypeArray FunctionTypeArray::fromJSON(AnsiString s) {
-  FunctionTypeArray arr = FunctionTypeArray();
-  int ix=1;
-  while(ix <= s.Length() && s[ix]!='[')
-    ix++;
-  ix++;
-  if (ix>s.Length()) 
-    throw Exception("FunctionTypeArray::fromJSON");
-  while (ix<=s.Length()) {
-    int start = ix;
-    bool inString = false;
-    int bracketLevel = 0;
-    while (ix<=s.Length()) {
-      if (s[ix]=='\\')
-        ix+=2;
-      else if (s[ix]=='"')
-        inString = !inString;
-      else if (!inString && s[ix]=='[')
-        bracketLevel++;
-      else if (!inString && s[ix]=='{')
-        bracketLevel++;
-      else if (!inString && s[ix]==']')
-        bracketLevel--;
-      else if (!inString && s[ix]=='}')
-        bracketLevel--;
-      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
-        if (start==ix)
-          return arr;
-        if (ix-start<=0)
-          throw Exception("FunctionTypeArray::fromJSON");
-        AnsiString tmp = s.SubString(start, ix-start);
-        arr.Insert(FunctionType::fromJSON(tmp));
-        ix++;
-        break;
-      }
-      ix++;
-    }
-  }
-  return arr;
 }
 FunctionTypeArray::~FunctionTypeArray() {
 }
@@ -254,61 +105,6 @@ FunctionType& Type::asFunction() {
   return *(FunctionType*) _ptr;
 }
 
-AnsiString Type::toJSON() const {
-  StringBuffer _json;
-   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
-    if (_type==0)
-    _json += ((BasicType*) _ptr)->toJSON();
-    else if (_type==1)
-    _json += ((FunctionType*) _ptr)->toJSON();
-    else if (_type==2)
-      _json += "0";
-    else
-      throw Exception("Type::toJSON(" + AnsiString(_type) + ")");
-    _json += "}";
-    return _json.get();
-}
-Type Type::fromJSON(AnsiString s) {
-  int ix = 1;
-  while (ix<=s.Length() && s[ix]!=':')
-    ix++;
-  if (ix>s.Length()) 
-    throw Exception("Type::fromJSON");
-  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
-    if (s.Length()-ix-10-1<=0)
-      throw Exception("Type::fromJSON");
-    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
-    return Type::createBasic(BasicType::fromJSON(s));
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
-    if (s.Length()-ix-10-1<=0)
-      throw Exception("Type::fromJSON");
-    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
-    return Type::createFunction(FunctionType::fromJSON(s));
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
-    return Type::createNull();
-  }
-  AnsiString variantName = "";
-  ix = 1;
-  while (ix<=s.Length() && s[ix]!=':')
-    ix++;
-  if (ix>s.Length() || ix<=4) 
-    throw Exception("Type::fromJSON");
-  variantName = s.SubString(3, ix-4);
-  if (variantName==("basic")) {
-    if (s.Length()-ix-1<=0)
-      throw Exception("Type::fromJSON");
-    s = s.SubString(ix+1, s.Length()-ix-1);
-    return Type::createBasic(BasicType::fromJSON(s));
-  } else if (variantName==("function")) {
-    if (s.Length()-ix-1<=0)
-      throw Exception("Type::fromJSON");
-    s = s.SubString(ix+1, s.Length()-ix-1);
-    return Type::createFunction(FunctionType::fromJSON(s));
-  } else if (variantName==("null")) {
-    return Type::createNull();
-  } else 
-    throw Exception("Type::fromJSON");
-}
 
 Type::~Type() {
   clean();
@@ -419,67 +215,6 @@ bool BasicType::isVoid() const {
   return _type==_TypeVoid;
 }
 
-AnsiString BasicType::toJSON() const {
-  StringBuffer _json;
-   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
-    if (_type==0)
-      _json += "0";
-    else if (_type==1)
-      _json += "0";
-    else if (_type==2)
-      _json += "0";
-    else if (_type==3)
-      _json += "0";
-    else if (_type==4)
-      _json += "0";
-    else if (_type==5)
-      _json += "0";
-    else
-      throw Exception("BasicType::toJSON(" + AnsiString(_type) + ")");
-    _json += "}";
-    return _json.get();
-}
-BasicType BasicType::fromJSON(AnsiString s) {
-  int ix = 1;
-  while (ix<=s.Length() && s[ix]!=':')
-    ix++;
-  if (ix>s.Length()) 
-    throw Exception("BasicType::fromJSON");
-  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
-    return BasicType::createInt();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
-    return BasicType::createBool();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
-    return BasicType::createDouble();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
-    return BasicType::createChar();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
-    return BasicType::createString();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("5")) {
-    return BasicType::createVoid();
-  }
-  AnsiString variantName = "";
-  ix = 1;
-  while (ix<=s.Length() && s[ix]!=':')
-    ix++;
-  if (ix>s.Length() || ix<=4) 
-    throw Exception("BasicType::fromJSON");
-  variantName = s.SubString(3, ix-4);
-  if (variantName==("int")) {
-    return BasicType::createInt();
-  } else if (variantName==("bool")) {
-    return BasicType::createBool();
-  } else if (variantName==("double")) {
-    return BasicType::createDouble();
-  } else if (variantName==("char")) {
-    return BasicType::createChar();
-  } else if (variantName==("string")) {
-    return BasicType::createString();
-  } else if (variantName==("void")) {
-    return BasicType::createVoid();
-  } else 
-    throw Exception("BasicType::fromJSON");
-}
 
 BasicType::~BasicType() {
   clean();
@@ -525,7 +260,7 @@ BasicType BasicType::createVoid() {
 //----------------------------------
 
 //------------- FunctionType ---------------
-FunctionType::FunctionType(const Type& _returnType, const TypeArray& _args) : returnType(_returnType), args(_args) {
+FunctionType::FunctionType(const Type& _returnType, const TypeArray& _args, const TypeCheckerEnviroment& _env) : returnType(_returnType), args(_args), env(_env) {
 }
 const Type& FunctionType::getReturnType() const {
   return returnType;
@@ -539,54 +274,11 @@ const TypeArray& FunctionType::getArgs() const {
 TypeArray& FunctionType::getArgs() {
   return args;
 }
-AnsiString FunctionType::toJSON() const {
-  StringBuffer _json;
-  _json += "{";
-    _json += "\"returnType\":";
-    _json += returnType.toJSON();
-    _json += ",";
-    _json += "\"args\":";
-    _json += args.toJSON();
-  _json += "}";
-  return _json.get();
+const TypeCheckerEnviroment& FunctionType::getEnv() const {
+  return env;
 }
-FunctionType FunctionType::fromJSON(AnsiString s) {
-  AnsiString arr[2];
-  int ix=1;
-  for (int i=0;i<2;i++) {
-    while (ix<=s.Length() && s[ix]!=':')
-      ix++;
-    if (ix>s.Length()) 
-      throw Exception("FunctionType::fromJSON");
-    int start = ix;
-    bool inString = false;
-    int bracketLevel = 0;
-    while (ix<=s.Length()) {
-      if (s[ix]=='\\')
-        ix+=2;
-      else if (s[ix]=='"')
-        inString = !inString;
-      else if (!inString && s[ix]=='[')
-        bracketLevel++;
-      else if (!inString && s[ix]=='{')
-        bracketLevel++;
-      else if (!inString && s[ix]==']')
-        bracketLevel--;
-      else if (!inString && s[ix]=='}')
-        bracketLevel--;
-      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
-        if (i<2) {
-          if (ix-start-1<=0)
-            throw Exception("FunctionType::fromJSON");
-          arr[i] = s.SubString(start+1, ix-start-1);
-        }
-        ix++;
-        break;
-      }
-      ix++;
-    }
-  }
-  return FunctionType(Type::fromJSON(arr[0]), TypeArray::fromJSON(arr[1]));
+TypeCheckerEnviroment& FunctionType::getEnv() {
+  return env;
 }
 FunctionType::~FunctionType() {
 }

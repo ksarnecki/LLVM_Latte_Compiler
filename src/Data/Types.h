@@ -1,8 +1,6 @@
 #ifndef _TYPES_GEN_H_
 #define _TYPES_GEN_H_
 #include "DynSet.h"
-#include <stdio.h>
-#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -14,6 +12,10 @@
 #include "Register.h"
 //----------------------------------
 
+//------------- TypeCheckerEnviroment ---------------
+#include "TypeCheckerEnviroment.h"
+//----------------------------------
+
 //------------- TypeArray ---------------
 #include "DynSet.h"
 
@@ -23,8 +25,6 @@ class TypeArray : public DynSet<Type> {
 public:
   TypeArray();
 
-  virtual AnsiString toJSON() const;
-  static TypeArray fromJSON(AnsiString);
 
   virtual ~TypeArray();
 
@@ -40,8 +40,6 @@ class BasicTypeArray : public DynSet<BasicType> {
 public:
   BasicTypeArray();
 
-  virtual AnsiString toJSON() const;
-  static BasicTypeArray fromJSON(AnsiString);
 
   virtual ~BasicTypeArray();
 
@@ -57,8 +55,6 @@ class FunctionTypeArray : public DynSet<FunctionType> {
 public:
   FunctionTypeArray();
 
-  virtual AnsiString toJSON() const;
-  static FunctionTypeArray fromJSON(AnsiString);
 
   virtual ~FunctionTypeArray();
 
@@ -90,8 +86,6 @@ public:
   virtual const FunctionType& asFunction() const;
   virtual FunctionType& asFunction();
 
-  virtual AnsiString toJSON() const;
-  static Type fromJSON(AnsiString);
 
   virtual ~Type();
 
@@ -129,8 +123,6 @@ public:
   virtual bool isVoid() const;
 
 
-  virtual AnsiString toJSON() const;
-  static BasicType fromJSON(AnsiString);
 
   virtual ~BasicType();
 
@@ -148,15 +140,16 @@ public:
 class FunctionType {
   Type returnType;
   TypeArray args;
+  TypeCheckerEnviroment env;
 public:
-  FunctionType(const Type&, const TypeArray&);
+  FunctionType(const Type&, const TypeArray&, const TypeCheckerEnviroment&);
   virtual const Type& getReturnType() const;
   virtual const TypeArray& getArgs() const;
+  virtual const TypeCheckerEnviroment& getEnv() const;
   virtual Type& getReturnType();
   virtual TypeArray& getArgs();
+  virtual TypeCheckerEnviroment& getEnv();
 
-  virtual AnsiString toJSON() const;
-  static FunctionType fromJSON(AnsiString);
 
   virtual ~FunctionType();
 

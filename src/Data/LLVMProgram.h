@@ -184,6 +184,57 @@ public:
 };
 //----------------------------------
 
+//------------- PhiCase ---------------
+class PhiCase {
+  Register value;
+  AnsiString label;
+public:
+  PhiCase(const Register&, const AnsiString&);
+  virtual const Register& getValue() const;
+  virtual const AnsiString& getLabel() const;
+  virtual Register& getValue();
+  virtual AnsiString& getLabel();
+
+
+  virtual ~PhiCase();
+
+};
+//----------------------------------
+
+//------------- PhiCases ---------------
+#include "DynSet.h"
+
+
+class PhiCases : public DynSet<PhiCase> {
+public:
+  PhiCases();
+
+
+  virtual ~PhiCases();
+
+};
+//----------------------------------
+
+//------------- PhiInstr ---------------
+class PhiInstr {
+  AnsiString ident;
+  Register ret;
+  PhiCases caseses;
+public:
+  PhiInstr(const AnsiString&, const Register&, const PhiCases&);
+  virtual const AnsiString& getIdent() const;
+  virtual const Register& getRet() const;
+  virtual const PhiCases& getCaseses() const;
+  virtual AnsiString& getIdent();
+  virtual Register& getRet();
+  virtual PhiCases& getCaseses();
+
+
+  virtual ~PhiInstr();
+
+};
+//----------------------------------
+
 //------------- Instr ---------------
 class Instr {
   int _type;
@@ -191,6 +242,8 @@ class Instr {
 
   static const int _TypeBinaryOperationInstr;
   static const int _TypeCallInstr;
+  static const int _TypePhiInstr;
+  static const int _TypeReturnInstr;
   static const int _TypeBrInstr;
   static const int _TypeBrIfInstr;
   static const int _TypePrintInstr;
@@ -204,6 +257,8 @@ public:
 
   virtual bool isBinaryOperationInstr() const;
   virtual bool isCallInstr() const;
+  virtual bool isPhiInstr() const;
+  virtual bool isReturnInstr() const;
   virtual bool isBrInstr() const;
   virtual bool isBrIfInstr() const;
   virtual bool isPrintInstr() const;
@@ -212,6 +267,10 @@ public:
   virtual BinaryOperation& asBinaryOperationInstr();
   virtual const CallInstr& asCallInstr() const;
   virtual CallInstr& asCallInstr();
+  virtual const PhiInstr& asPhiInstr() const;
+  virtual PhiInstr& asPhiInstr();
+  virtual const Register& asReturnInstr() const;
+  virtual Register& asReturnInstr();
   virtual const BrInstr& asBrInstr() const;
   virtual BrInstr& asBrInstr();
   virtual const BrIfInstr& asBrIfInstr() const;
@@ -224,6 +283,8 @@ public:
 
   static Instr createBinaryOperationInstr(const BinaryOperation&);
   static Instr createCallInstr(const CallInstr&);
+  static Instr createPhiInstr(const PhiInstr&);
+  static Instr createReturnInstr(const Register&);
   static Instr createBrInstr(const BrInstr&);
   static Instr createBrIfInstr(const BrIfInstr&);
   static Instr createPrintInstr(const Register&);
@@ -278,13 +339,13 @@ public:
 
 //------------- LLVMFunctionArgument ---------------
 class LLVMFunctionArgument {
-  RegisterKind type;
+  Register reg;
   AnsiString name;
 public:
-  LLVMFunctionArgument(const RegisterKind&, const AnsiString&);
-  virtual const RegisterKind& getType() const;
+  LLVMFunctionArgument(const Register&, const AnsiString&);
+  virtual const Register& getReg() const;
   virtual const AnsiString& getName() const;
-  virtual RegisterKind& getType();
+  virtual Register& getReg();
   virtual AnsiString& getName();
 
 

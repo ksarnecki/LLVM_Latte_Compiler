@@ -1,7 +1,7 @@
 #include "Printer.h"
 
 AnsiString Printer::renderFunctionArgument(const LLVMFunctionArgument& arg) {
-  return renderRegisterKind(arg.getType()) + " " + arg.getName();
+  return renderRegisterKind(arg.getReg().getKind()) + " " + renderRegister(arg.getReg());
 }
 
 AnsiString Printer::renderRegisterKind(const RegisterKind& kind) {
@@ -57,6 +57,10 @@ AnsiString Printer::renderBody(const InstrArray& instrs) {
       outString += "  " + renderBrInstr(instr.asBrInstr());
     } else if (instr.isBrIfInstr()) {
       outString += "  " + renderBrIfInstr(instr.asBrIfInstr());
+    } else if (instr.isReturnInstr()) {
+      outString += "  " + renderReturnInstr(instr.asReturnInstr());
+    } else if (instr.isPhiInstr()) {
+      outString += "  " + renderPhiInstr(instr.asPhiInstr());
     } else {
       throw Exception("[LLVMProgramPrinter::print] Unknown instr type!");
     }
@@ -67,7 +71,10 @@ AnsiString Printer::renderBody(const InstrArray& instrs) {
 
 AnsiString Printer::renderCallInstr(const CallInstr& instr) {
   AnsiString outString = "call ";
-  outString += renderRegisterKind(instr.getRetType());
+  if(instr.getRetType().isNull())
+    outString += "void";
+  else
+    outString += renderRegisterKind(instr.getRetType());
   outString += " @" + instr.getFunction() + "(";
   for(int i=0;i<instr.getArgs().Size();i++) {
     if(i>0)
@@ -87,8 +94,24 @@ AnsiString Printer::renderBrInstr(const BrInstr& br) {
   return "br label %" + br.getBlock();
 }
 
+AnsiString Printer::renderPhiInstr(const PhiInstr& phi) {
+  AnsiString ret;
+  ret = renderRegister(phi.getRet()) + " ";
+  ret += " = phi " + renderRegisterKind(phi.getRet().getKind()) + " ";
+  for(int i=0;i<phi.getCaseses().Size();i++) {
+    if(i>0)
+      ret += ",";
+    ret += "[" + renderRegister(phi.getCaseses()[i].getValue()) + ", %" + phi.getCaseses()[i].getLabel() + "]";
+  }
+  return ret;
+}
+
 AnsiString Printer::renderBrIfInstr(const BrIfInstr& br) {
   return "br i1 " + renderRegister(br.getCond()) + ", label %" + br.getIfTrueBlock() + ", label %" + br.getIfFalseBlock();
+}
+
+AnsiString Printer::renderReturnInstr(const Register& ret) {
+  return "ret " + renderRegisterKind(ret.getKind()) + " " + renderRegister(ret);
 }
 
 AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation) {
@@ -111,17 +134,17 @@ AnsiString Printer::renderBinaryOperator(const BinaryOperator& binaryOperator) {
   } else if (binaryOperator.isMul()) {
     return "mul i32";
   } else if (binaryOperator.isLth()) {
-    return "icmp lt i32";
+    return "icmp ult i32";
   } else if (binaryOperator.isLe()) {
-    return "icmp leq i32";
+    return "icmp ule i32";
   } else if (binaryOperator.isGth()) {
-    return "icmp gt i32";
+    return "icmp ugt i32";
   } else if (binaryOperator.isGe()) {
-    return "icmp ge i32";
+    return "icmp uge i32";
   } else if (binaryOperator.isEqu()) {
     return "icmp eq i32";
   } else if (binaryOperator.isNe()) {
-    return "icmp neq i32";
+    return "icmp ne i32";
   } else {
     throw Exception("[LLVMProgramPrinter::renderBinaryOperationArgument] Unknown argument type!");
   }

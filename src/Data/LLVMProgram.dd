@@ -52,9 +52,24 @@ BrInstr = record {
   block : string
 }
 
+PhiCase = record {
+  value : Register,
+  label : string
+}
+
+PhiCases = array of PhiCase
+
+PhiInstr = record {
+  ident : string,
+  ret : Register,
+  caseses : PhiCases
+}
+
 Instr = variant {
   binaryOperationInstr : BinaryOperation,
   callInstr : CallInstr,
+  phiInstr : PhiInstr,
+  returnInstr : Register,
   brInstr : BrInstr,
   brIfInstr : BrIfInstr,
   printInstr : Register
@@ -70,7 +85,7 @@ LLVMBlock = record {
 LLVMBlockArray = array of LLVMBlock
 
 LLVMFunctionArgument = record {
-  type : RegisterKind,
+  reg : Register,
   name : string
 }
 

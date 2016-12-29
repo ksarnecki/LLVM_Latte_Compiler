@@ -92,7 +92,13 @@ public:
   void visitString(String x);
   void visitIdent(Ident x);
 
+  void addPredefinied() {
+    Object o1 = Object::createFunction(FunctionObject(RegisterKind::createNull()));
+    updateEnviroment("printInt", o1);
+  }
+
   LLVMProgram compile(Visitable *v) {
+    addPredefinied();
     v->accept(this);
     return program;
   }
@@ -101,16 +107,19 @@ public:
   Register getNextRegister(const RegisterKind);
   RegisterKind getBinaryOperationRegisterKind(const Register&, const Register&);
   RegisterKind getRegisterKindFromLatteType(const LatteType*);
+  //AnsiString getIdentByRegister(const Register&);
 
   void initBlock(const AnsiString&);
   AnsiString getNextBlockNameByPrefix(const AnsiString&);
   void addInstr(const Instr);
+  void addPhiCase(const AnsiString&, const Register&, const AnsiString&, const AnsiString&);
 
   const AnsiString whileToken = "while";
 
   
 
   void updateEnviroment(const AnsiString&, const Object&);
+  void updateStore(const AnsiString&, const Object&);
 
   Object getObjectByIdent(const AnsiString&);
   Register getRegisterByIdent(const AnsiString&);

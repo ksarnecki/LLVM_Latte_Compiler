@@ -11,6 +11,10 @@ Register
 external
 Register.h
 
+TypeCheckerEnviroment
+external
+TypeCheckerEnviroment.h
+
 TypeArray = array of Type
 
 BasicTypeArray = array of BasicType
@@ -34,5 +38,6 @@ BasicType = variant {
 
 FunctionType = record {
   returnType : Type,
-  args : TypeArray
+  args : TypeArray,
+  env : TypeCheckerEnviroment
 }

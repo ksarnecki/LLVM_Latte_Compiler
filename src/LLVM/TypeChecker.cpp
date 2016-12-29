@@ -28,23 +28,35 @@ void TypeChecker::visitFnDef(FnDef *fndef)
   fndef->lattetype_->accept(this);
   Type funRetType = actType;
   TypeArray funArgs;
+  TypeCheckerEnviroment env = enviroment;
   for (ListArg::iterator i = fndef->listarg_->begin() ; i != fndef->listarg_->end() ; ++i)
   {
     if(Ar *arg = dynamic_cast<Ar*>(*i)) {
       arg->lattetype_->accept(this);
       funArgs.Insert(actType);
+      TypeCheckerManager::addIdent(arg->ident_, actType, 0, env, store);
     } else {
       throw Exception("[typeChecker::visitFnDef] unknown arg kind");
     }
   }
   actRet = Type::createNull();
+
+  TypeCheckerManager::addIdent(fndef->ident_, 
+    Type::createFunction(FunctionType(funRetType, funArgs, env)), 
+    actNesting, enviroment, store);
+  TypeCheckerManager::addIdent(fndef->ident_, 
+    Type::createFunction(FunctionType(funRetType, funArgs, env)), 
+    actNesting, env, store);
+
+  TypeCheckerEnviroment prev = enviroment;
+  enviroment = env;
   fndef->block_->accept(this);
+  enviroment = prev;
+
   if(!TypeCheckerManager::cmp(funRetType, actRet)) {
     addError(fndef->lattetype_->line_number, "Bad return type");
   }
-  TypeCheckerManager::addIdent(fndef->ident_, 
-    Type::createFunction(FunctionType(funRetType, funArgs)), 
-    actNesting, enviroment, store);
+
 }
 
 void TypeChecker::visitAr(Ar *ar)
@@ -132,7 +144,7 @@ void TypeChecker::visitVRet(VRet *vret)
 void TypeChecker::visitCond(Cond *cond)
 {
   cond->expr_->accept(this);
-  if(TypeCheckerManager::bsc(actType)) {
+  if(!TypeCheckerManager::bsc(actType)) {
     addError(cond->expr_->line_number, "Bad expression type");
   }
   cond->stmt_->accept(this);
@@ -141,7 +153,7 @@ void TypeChecker::visitCond(Cond *cond)
 void TypeChecker::visitCondElse(CondElse *condelse)
 {
   condelse->expr_->accept(this);
-  if(TypeCheckerManager::bsc(actType)) {
+  if(!TypeCheckerManager::bsc(actType)) {
     addError(condelse->expr_->line_number, "Bad expression type");
   }
   condelse->stmt_1->accept(this);
@@ -201,13 +213,10 @@ void TypeChecker::visitVoidType(VoidType *voidtype)
 
 void TypeChecker::visitFun(Fun *fun)
 {
-  printf("VISIT FUN");
-  //TODO
-  //actType = Type::createFunction(FunctionType::createInt());
+  //todo ???
   fun->lattetype_->accept(this);
   Type retType = actType;
   fun->listlattetype_->accept(this);
-  //??wtf
 }
 
 void TypeChecker::visitEVar(EVar *evar)
@@ -295,9 +304,15 @@ void TypeChecker::visitEAdd(EAdd *eadd)
   Type exp1 = actType;
   eadd->expr_2->accept(this);
   Type exp2 = actType;
-  if(TypeCheckerManager::txt(exp1) || TypeCheckerManager::txt(exp2) ||  !TypeCheckerManager::bsc(exp1) || !TypeCheckerManager::bsc(exp2)) {
+  if(TypeCheckerManager::txt(exp1)) {
     addError(eadd->expr_2->line_number, "Bad add expression arg type");
-  }
+  } else if(TypeCheckerManager::txt(exp2)) {
+    addError(eadd->expr_2->line_number, "Bad add expression arg type");
+  } else if(!TypeCheckerManager::bsc(exp1)) {
+    addError(eadd->expr_2->line_number, "Bad add expression arg type");
+  } else if(!TypeCheckerManager::bsc(exp2)) {
+    addError(eadd->expr_2->line_number, "Bad add expression arg type");
+  } 
 }
 
 void TypeChecker::visitERel(ERel *erel)
@@ -517,6 +532,8 @@ Type TypeCheckerManager::getTypeByIdent(const Ident& ident, TypeCheckerEnviromen
       throw Exception("[TypeCheckerManager::getTypeByIdent] internal error");
     }
   }
+  //todo
+  throw Exception("[TypeCheckerManager::getTypeByIdent] ident not found: " + ident);
   return Type::createNull();
 }
 

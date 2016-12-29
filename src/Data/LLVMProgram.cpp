@@ -403,12 +403,65 @@ BrInstr::~BrInstr() {
 }
 //----------------------------------
 
+//------------- PhiCase ---------------
+PhiCase::PhiCase(const Register& _value, const AnsiString& _label) : value(_value), label(_label) {
+}
+const Register& PhiCase::getValue() const {
+  return value;
+}
+Register& PhiCase::getValue() {
+  return value;
+}
+const AnsiString& PhiCase::getLabel() const {
+  return label;
+}
+AnsiString& PhiCase::getLabel() {
+  return label;
+}
+PhiCase::~PhiCase() {
+}
+//----------------------------------
+
+//------------- PhiCases ---------------
+PhiCases::PhiCases() {
+}
+PhiCases::~PhiCases() {
+}
+//----------------------------------
+
+//------------- PhiInstr ---------------
+PhiInstr::PhiInstr(const AnsiString& _ident, const Register& _ret, const PhiCases& _caseses) : ident(_ident), ret(_ret), caseses(_caseses) {
+}
+const AnsiString& PhiInstr::getIdent() const {
+  return ident;
+}
+AnsiString& PhiInstr::getIdent() {
+  return ident;
+}
+const Register& PhiInstr::getRet() const {
+  return ret;
+}
+Register& PhiInstr::getRet() {
+  return ret;
+}
+const PhiCases& PhiInstr::getCaseses() const {
+  return caseses;
+}
+PhiCases& PhiInstr::getCaseses() {
+  return caseses;
+}
+PhiInstr::~PhiInstr() {
+}
+//----------------------------------
+
 //------------- Instr ---------------
 const int Instr::_TypeBinaryOperationInstr = 0;
 const int Instr::_TypeCallInstr = 1;
-const int Instr::_TypeBrInstr = 2;
-const int Instr::_TypeBrIfInstr = 3;
-const int Instr::_TypePrintInstr = 4;
+const int Instr::_TypePhiInstr = 2;
+const int Instr::_TypeReturnInstr = 3;
+const int Instr::_TypeBrInstr = 4;
+const int Instr::_TypeBrIfInstr = 5;
+const int Instr::_TypePrintInstr = 6;
 void Instr::init(int type, void* ptr) {
   if (type==_TypeBinaryOperationInstr) {
     _type = type;
@@ -416,6 +469,12 @@ void Instr::init(int type, void* ptr) {
   } else if (type==_TypeCallInstr) {
     _type = type;
     _ptr = new CallInstr(*(CallInstr*) ptr);
+  } else if (type==_TypePhiInstr) {
+    _type = type;
+    _ptr = new PhiInstr(*(PhiInstr*) ptr);
+  } else if (type==_TypeReturnInstr) {
+    _type = type;
+    _ptr = new Register(*(Register*) ptr);
   } else if (type==_TypeBrInstr) {
     _type = type;
     _ptr = new BrInstr(*(BrInstr*) ptr);
@@ -435,6 +494,14 @@ void Instr::clean() {
   } else if (_type==_TypeCallInstr) {
     _type = -1;
     delete (CallInstr*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypePhiInstr) {
+    _type = -1;
+    delete (PhiInstr*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeReturnInstr) {
+    _type = -1;
+    delete (Register*) _ptr;
     _ptr = 0;
   } else if (_type==_TypeBrInstr) {
     _type = -1;
@@ -466,6 +533,12 @@ bool Instr::isBinaryOperationInstr() const {
 bool Instr::isCallInstr() const {
   return _type==_TypeCallInstr;
 }
+bool Instr::isPhiInstr() const {
+  return _type==_TypePhiInstr;
+}
+bool Instr::isReturnInstr() const {
+  return _type==_TypeReturnInstr;
+}
 bool Instr::isBrInstr() const {
   return _type==_TypeBrInstr;
 }
@@ -494,6 +567,26 @@ CallInstr& Instr::asCallInstr() {
   if (_type!=_TypeCallInstr)
     throw Exception("Instr::asCallInstr");
   return *(CallInstr*) _ptr;
+}
+const PhiInstr& Instr::asPhiInstr() const {
+  if (_type!=_TypePhiInstr)
+    throw Exception("Instr::asPhiInstr");
+  return *(PhiInstr*) _ptr;
+}
+PhiInstr& Instr::asPhiInstr() {
+  if (_type!=_TypePhiInstr)
+    throw Exception("Instr::asPhiInstr");
+  return *(PhiInstr*) _ptr;
+}
+const Register& Instr::asReturnInstr() const {
+  if (_type!=_TypeReturnInstr)
+    throw Exception("Instr::asReturnInstr");
+  return *(Register*) _ptr;
+}
+Register& Instr::asReturnInstr() {
+  if (_type!=_TypeReturnInstr)
+    throw Exception("Instr::asReturnInstr");
+  return *(Register*) _ptr;
 }
 const BrInstr& Instr::asBrInstr() const {
   if (_type!=_TypeBrInstr)
@@ -540,6 +633,18 @@ Instr Instr::createCallInstr(const CallInstr& _param) {
   Instr _value;
   _value._type = _TypeCallInstr;
   _value._ptr = new CallInstr(_param);
+  return _value;
+}
+Instr Instr::createPhiInstr(const PhiInstr& _param) {
+  Instr _value;
+  _value._type = _TypePhiInstr;
+  _value._ptr = new PhiInstr(_param);
+  return _value;
+}
+Instr Instr::createReturnInstr(const Register& _param) {
+  Instr _value;
+  _value._type = _TypeReturnInstr;
+  _value._ptr = new Register(_param);
   return _value;
 }
 Instr Instr::createBrInstr(const BrInstr& _param) {
@@ -598,13 +703,13 @@ LLVMBlockArray::~LLVMBlockArray() {
 //----------------------------------
 
 //------------- LLVMFunctionArgument ---------------
-LLVMFunctionArgument::LLVMFunctionArgument(const RegisterKind& _type, const AnsiString& _name) : type(_type), name(_name) {
+LLVMFunctionArgument::LLVMFunctionArgument(const Register& _reg, const AnsiString& _name) : reg(_reg), name(_name) {
 }
-const RegisterKind& LLVMFunctionArgument::getType() const {
-  return type;
+const Register& LLVMFunctionArgument::getReg() const {
+  return reg;
 }
-RegisterKind& LLVMFunctionArgument::getType() {
-  return type;
+Register& LLVMFunctionArgument::getReg() {
+  return reg;
 }
 const AnsiString& LLVMFunctionArgument::getName() const {
   return name;

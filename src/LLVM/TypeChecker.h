@@ -104,6 +104,12 @@ void visitProgram(Program* p);
   }
 
   bool check(Visitable *v) {
+    //printInt
+    TypeArray ta;
+    ta.Insert(Type::createBasic(BasicType::createInt()));
+    TypeCheckerManager::addIdent("printInt", Type::createFunction(FunctionType(Type::createBasic(BasicType::createVoid()), ta, TypeCheckerEnviroment())), 0, enviroment, store);
+    
+
     v->accept(this);
     if(errors.Size()>0) {
       printf("ERROR\n");

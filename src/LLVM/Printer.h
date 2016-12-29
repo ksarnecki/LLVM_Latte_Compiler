@@ -15,6 +15,8 @@ private:
   static AnsiString renderCallInstr(const CallInstr&);
   static AnsiString renderBrInstr(const BrInstr&);
   static AnsiString renderBrIfInstr(const BrIfInstr&);
+  static AnsiString renderReturnInstr(const Register&);
+  static AnsiString renderPhiInstr(const PhiInstr&);
 
   static AnsiString renderFunctionArgument(const LLVMFunctionArgument&);
   static AnsiString renderRegisterKind(const RegisterKind&);
