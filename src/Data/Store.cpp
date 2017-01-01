@@ -1,6 +1,8 @@
 
 #include "Store.h"
 #include "Exception.h"
+#include "StringBuffer.h"
+#include "JSONUtil.h"
 //------------- int ---------------
 //----------------------------------
 
@@ -11,6 +13,9 @@
 //----------------------------------
 
 //------------- Register ---------------
+//----------------------------------
+
+//------------- LLVMFunctionType ---------------
 //----------------------------------
 
 //------------- RegisterKind ---------------
@@ -139,6 +144,91 @@ Register& BasicObject::asString() {
   return *(Register*) _ptr;
 }
 
+AnsiString BasicObject::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==1)
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==2)
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==3)
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==4)
+    _json += ((Register*) _ptr)->toJSON();
+    else
+      throw Exception("BasicObject::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+BasicObject BasicObject::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("BasicObject::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return BasicObject::createInt(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return BasicObject::createBool(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return BasicObject::createDouble(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return BasicObject::createChar(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return BasicObject::createString(Register::fromJSON(s));
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("BasicObject::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("int")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return BasicObject::createInt(Register::fromJSON(s));
+  } else if (variantName==("bool")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return BasicObject::createBool(Register::fromJSON(s));
+  } else if (variantName==("double")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return BasicObject::createDouble(Register::fromJSON(s));
+  } else if (variantName==("char")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return BasicObject::createChar(Register::fromJSON(s));
+  } else if (variantName==("string")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("BasicObject::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return BasicObject::createString(Register::fromJSON(s));
+  } else 
+    throw Exception("BasicObject::fromJSON");
+}
 
 BasicObject::~BasicObject() {
   clean();
@@ -178,13 +268,59 @@ BasicObject BasicObject::createString(const Register& _param) {
 //----------------------------------
 
 //------------- FunctionObject ---------------
-FunctionObject::FunctionObject(const RegisterKind& _type) : type(_type) {
+FunctionObject::FunctionObject(const LLVMFunctionType& _type) : type(_type) {
 }
-const RegisterKind& FunctionObject::getType() const {
+const LLVMFunctionType& FunctionObject::getType() const {
   return type;
 }
-RegisterKind& FunctionObject::getType() {
+LLVMFunctionType& FunctionObject::getType() {
   return type;
+}
+AnsiString FunctionObject::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"type\":";
+    _json += type.toJSON();
+  _json += "}";
+  return _json.get();
+}
+FunctionObject FunctionObject::fromJSON(AnsiString s) {
+  AnsiString arr[1];
+  int ix=1;
+  for (int i=0;i<1;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("FunctionObject::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<1) {
+          if (ix-start-1<=0)
+            throw Exception("FunctionObject::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return FunctionObject(LLVMFunctionType::fromJSON(arr[0]));
 }
 FunctionObject::~FunctionObject() {
 }
@@ -272,6 +408,67 @@ FunctionObject& Object::asFunction() {
   return *(FunctionObject*) _ptr;
 }
 
+AnsiString Object::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+    _json += ((BasicObject*) _ptr)->toJSON();
+    else if (_type==1)
+    _json += ((FunctionObject*) _ptr)->toJSON();
+    else if (_type==2)
+      _json += "0";
+    else if (_type==3)
+      _json += "0";
+    else
+      throw Exception("Object::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+Object Object::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("Object::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Object::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Object::createBasic(BasicObject::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Object::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Object::createFunction(FunctionObject::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
+    return Object::createClassObject();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
+    return Object::createNull();
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("Object::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("basic")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Object::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Object::createBasic(BasicObject::fromJSON(s));
+  } else if (variantName==("function")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Object::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Object::createFunction(FunctionObject::fromJSON(s));
+  } else if (variantName==("classObject")) {
+    return Object::createClassObject();
+  } else if (variantName==("null")) {
+    return Object::createNull();
+  } else 
+    throw Exception("Object::fromJSON");
+}
 
 Object::~Object() {
   clean();
@@ -319,6 +516,55 @@ const Object& StoreElement::getObj() const {
 Object& StoreElement::getObj() {
   return obj;
 }
+AnsiString StoreElement::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"id\":";
+    _json += AnsiString(id);
+    _json += ",";
+    _json += "\"obj\":";
+    _json += obj.toJSON();
+  _json += "}";
+  return _json.get();
+}
+StoreElement StoreElement::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("StoreElement::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("StoreElement::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return StoreElement(atoi(arr[0].c_str()), Object::fromJSON(arr[1]));
+}
 StoreElement::~StoreElement() {
 }
 //----------------------------------
@@ -326,12 +572,112 @@ StoreElement::~StoreElement() {
 //------------- ObjectArray ---------------
 ObjectArray::ObjectArray() {
 }
+AnsiString ObjectArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+ObjectArray ObjectArray::fromJSON(AnsiString s) {
+  ObjectArray arr = ObjectArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("ObjectArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("ObjectArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(Object::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
+}
 ObjectArray::~ObjectArray() {
 }
 //----------------------------------
 
 //------------- Store ---------------
 Store::Store() {
+}
+AnsiString Store::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+Store Store::fromJSON(AnsiString s) {
+  Store arr = Store();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("Store::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("Store::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(StoreElement::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
 }
 Store::~Store() {
 }

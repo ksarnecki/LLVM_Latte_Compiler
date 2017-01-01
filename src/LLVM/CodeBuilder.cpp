@@ -38,7 +38,10 @@ void CodeBuilder::visitFnDef(FnDef *fndef)
   /*
   * 2. Typ zwracany
   */
-  RegisterKind fRetType = getRegisterKindFromLatteType(fndef->lattetype_);
+  LLVMFunctionType fRetType = LLVMFunctionType::createVoid();
+  if(const VoidType *arg = dynamic_cast<const VoidType*>(fndef->lattetype_)) {
+  } else 
+    fRetType = LLVMFunctionType::createObj(getRegisterKindFromLatteType(fndef->lattetype_));
 
   /*
   * 3. Argumenty
@@ -158,21 +161,113 @@ void CodeBuilder::visitVRet(VRet *vret)
 
 void CodeBuilder::visitCond(Cond *cond)
 {
+  /*
+  * Generujemy nazwy bloków
+  */
+  AnsiString wcondblock = getNextBlockNameByPrefix("if_cond");
+  AnsiString wbodyblock = getNextBlockNameByPrefix("if_body");
+  AnsiString wendblock = getNextBlockNameByPrefix("if_end");
+
+  //skok do if_cond
+  addInstr(Instr::createBrInstr(BrInstr(wcondblock)));
+
+  /*
+  * Generujemy blok warunku
+  */
+  initBlock(wcondblock);
   cond->expr_->accept(this);
-  //if(Manager::bsc(actType)) {
-    //addError(cond->expr_->line_number, "Bad expression type");
-  //}
+  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, wendblock)));
+  
+  BuilderEnviroment e = enviroment;
+  Store s = store;
+
+  /*
+  * Generujemy ciało if
+  */
+  initBlock(wbodyblock);
   cond->stmt_->accept(this);
+  addInstr(Instr::createBrInstr(BrInstr(wendblock)));
+
+  initBlock(wendblock);
+  for(int i=0;i<e.Size();i++) {
+    if(getObjectByIdent(e[i].getIdent()).isBasic()) {
+      Register r = getNextRegister(RegisterKind::createValueI32());
+      PhiCases phiCases;
+      phiCases.Insert(PhiCase(getRegisterByIdent(e[i].getIdent()), actBlocks[actBlocks.Size()-3].getName()));
+      addInstr(Instr::createPhiInstr(PhiInstr(e[i].getIdent(), r, phiCases)));
+      updateEnviroment(e[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+    }
+  }
+  for(int i=0;i<enviroment.Size();i++) {
+    if(getObjectByIdent(enviroment[i].getIdent()).isBasic()) {
+      Register r = getNextRegister(RegisterKind::createValueI32());
+      PhiCases phiCases;
+      phiCases.Insert(PhiCase(getRegisterByIdent(enviroment[i].getIdent()), actBlocks[actBlocks.Size()-2].getName()));
+      addInstr(Instr::createPhiInstr(PhiInstr(enviroment[i].getIdent(), r, phiCases)));
+      updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+    }
+  }
+  enviroment = e;
+  store = s;
+
 }
 
 void CodeBuilder::visitCondElse(CondElse *condelse)
 {
+  /*
+  * Generujemy nazwy bloków
+  */
+  AnsiString wcondblock = getNextBlockNameByPrefix("if_cond");
+  AnsiString wbodyblock = getNextBlockNameByPrefix("if_body");
+  AnsiString welseblock = getNextBlockNameByPrefix("if_else");
+  AnsiString wendblock = getNextBlockNameByPrefix("if_end");
+
+  //skok do if_cond
+  addInstr(Instr::createBrInstr(BrInstr(wcondblock)));
+
+  /*
+  * Generujemy blok warunku
+  */
+  initBlock(wcondblock);
   condelse->expr_->accept(this);
-  //if(Manager::bsc(actType)) {
-    //addError(condelse->expr_->line_number, "Bad expression type");
-  //}
+  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, welseblock)));
+  BuilderEnviroment e = enviroment;
+  Store s = store;
+  /*
+  * Generujemy ciało if_body
+  */
+  initBlock(wbodyblock);
   condelse->stmt_1->accept(this);
+  addInstr(Instr::createBrInstr(BrInstr(wendblock)));
+
+  /*
+  * Generujemy ciało if_else
+  */
+  initBlock(welseblock);
   condelse->stmt_2->accept(this);
+  addInstr(Instr::createBrInstr(BrInstr(wendblock)));
+
+  initBlock(wendblock);
+  for(int i=0;i<e.Size();i++) {
+    if(getObjectByIdent(e[i].getIdent()).isBasic()) {
+      Register r = getNextRegister(RegisterKind::createValueI32());
+      PhiCases phiCases;
+      phiCases.Insert(PhiCase(getRegisterByIdent(e[i].getIdent()), actBlocks[actBlocks.Size()-3].getName()));
+      addInstr(Instr::createPhiInstr(PhiInstr(e[i].getIdent(), r, phiCases)));
+      updateEnviroment(e[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+    }
+  }
+  for(int i=0;i<enviroment.Size();i++) {
+    if(getObjectByIdent(enviroment[i].getIdent()).isBasic()) {
+      Register r = getNextRegister(RegisterKind::createValueI32());
+      PhiCases phiCases;
+      phiCases.Insert(PhiCase(getRegisterByIdent(enviroment[i].getIdent()), actBlocks[actBlocks.Size()-2].getName()));
+      addInstr(Instr::createPhiInstr(PhiInstr(enviroment[i].getIdent(), r, phiCases)));
+      updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+    }
+  }
+  enviroment = e;
+  store = s;
 }
 
 void CodeBuilder::visitWhileStmnt(WhileStmnt *whilestmnt)
@@ -297,14 +392,20 @@ void CodeBuilder::visitELitFalse(ELitFalse *elitfalse)
 
 void CodeBuilder::visitEApp(EApp *eapp)
 {
-  RegisterKind fType = getObjectByIdent(eapp->ident_).asFunction().getType();
   AnsiString fName = eapp->ident_;
   Registers fArgs;
   for (ListExpr::iterator i = eapp->listexpr_->begin() ; i != eapp->listexpr_->end() ; ++i) {
     (*i)->accept(this);
     fArgs.Insert(registerData.getLastRegister());
   }
-  addInstr(Instr::createCallInstr(CallInstr(fType, fName, fArgs)));
+  LLVMFunctionType fType = getObjectByIdent(eapp->ident_).asFunction().getType();
+  if(fType.isVoid()) {
+    addInstr(Instr::createCallInstr(CallInstr(CallInstrRet::createVoid(), fName, fArgs)));
+  } else {
+    Register reg = getNextRegister(fType.asObj());
+    addInstr(Instr::createCallInstr(CallInstr(CallInstrRet::createObj(reg), fName, fArgs)));
+    registerData.getLastRegister() = reg;
+  }
 }
 
 void CodeBuilder::visitEString(EString *estring)

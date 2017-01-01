@@ -1,6 +1,8 @@
 #ifndef _TYPECHECKERSTORE_GEN_H_
 #define _TYPECHECKERSTORE_GEN_H_
 #include "DynSet.h"
+#include <stdio.h>
+#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -23,6 +25,8 @@ public:
   virtual int& getId();
   virtual Type& getType();
 
+  virtual AnsiString toJSON() const;
+  static TypeCheckerStoreElement fromJSON(AnsiString);
 
   virtual ~TypeCheckerStoreElement();
 
@@ -37,6 +41,8 @@ class TypeCheckerStore : public DynSet<TypeCheckerStoreElement> {
 public:
   TypeCheckerStore();
 
+  virtual AnsiString toJSON() const;
+  static TypeCheckerStore fromJSON(AnsiString);
 
   virtual ~TypeCheckerStore();
 

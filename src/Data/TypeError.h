@@ -1,6 +1,8 @@
 #ifndef _TYPEERROR_GEN_H_
 #define _TYPEERROR_GEN_H_
 #include "DynSet.h"
+#include <stdio.h>
+#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -19,6 +21,8 @@ public:
   virtual int& getLine();
   virtual AnsiString& getMsg();
 
+  virtual AnsiString toJSON() const;
+  static TypeError fromJSON(AnsiString);
 
   virtual ~TypeError();
 
@@ -33,6 +37,8 @@ class TypeErrors : public DynSet<TypeError> {
 public:
   TypeErrors();
 
+  virtual AnsiString toJSON() const;
+  static TypeErrors fromJSON(AnsiString);
 
   virtual ~TypeErrors();
 

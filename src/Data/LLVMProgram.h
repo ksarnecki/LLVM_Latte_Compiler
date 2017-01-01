@@ -1,6 +1,8 @@
 #ifndef _LLVMPROGRAM_GEN_H_
 #define _LLVMPROGRAM_GEN_H_
 #include "DynSet.h"
+#include <stdio.h>
+#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -43,6 +45,8 @@ public:
   virtual const AnsiString& asNumber() const;
   virtual AnsiString& asNumber();
 
+  virtual AnsiString toJSON() const;
+  static BinaryOperationArgument fromJSON(AnsiString);
 
   virtual ~BinaryOperationArgument();
 
@@ -89,6 +93,8 @@ public:
   virtual bool isNe() const;
 
 
+  virtual AnsiString toJSON() const;
+  static BinaryOperator fromJSON(AnsiString);
 
   virtual ~BinaryOperator();
 
@@ -124,26 +130,62 @@ public:
   virtual BinaryOperationArgument& getRArg();
   virtual BinaryOperator& getBop();
 
+  virtual AnsiString toJSON() const;
+  static BinaryOperation fromJSON(AnsiString);
 
   virtual ~BinaryOperation();
 
 };
 //----------------------------------
 
+//------------- CallInstrRet ---------------
+class CallInstrRet {
+  int _type;
+  void* _ptr;
+
+  static const int _TypeVoid;
+  static const int _TypeObj;
+
+  virtual void init(int, void*);
+  virtual void clean();
+  CallInstrRet();
+public:
+  CallInstrRet(const CallInstrRet&);
+  virtual CallInstrRet& operator=(const CallInstrRet&);
+
+  virtual bool isVoid() const;
+  virtual bool isObj() const;
+
+  virtual const Register& asObj() const;
+  virtual Register& asObj();
+
+  virtual AnsiString toJSON() const;
+  static CallInstrRet fromJSON(AnsiString);
+
+  virtual ~CallInstrRet();
+
+  static CallInstrRet createVoid();
+  static CallInstrRet createObj(const Register&);
+
+};
+//----------------------------------
+
 //------------- CallInstr ---------------
 class CallInstr {
-  RegisterKind retType;
+  CallInstrRet retType;
   AnsiString function;
   Registers args;
 public:
-  CallInstr(const RegisterKind&, const AnsiString&, const Registers&);
-  virtual const RegisterKind& getRetType() const;
+  CallInstr(const CallInstrRet&, const AnsiString&, const Registers&);
+  virtual const CallInstrRet& getRetType() const;
   virtual const AnsiString& getFunction() const;
   virtual const Registers& getArgs() const;
-  virtual RegisterKind& getRetType();
+  virtual CallInstrRet& getRetType();
   virtual AnsiString& getFunction();
   virtual Registers& getArgs();
 
+  virtual AnsiString toJSON() const;
+  static CallInstr fromJSON(AnsiString);
 
   virtual ~CallInstr();
 
@@ -164,6 +206,8 @@ public:
   virtual AnsiString& getIfTrueBlock();
   virtual AnsiString& getIfFalseBlock();
 
+  virtual AnsiString toJSON() const;
+  static BrIfInstr fromJSON(AnsiString);
 
   virtual ~BrIfInstr();
 
@@ -178,6 +222,8 @@ public:
   virtual const AnsiString& getBlock() const;
   virtual AnsiString& getBlock();
 
+  virtual AnsiString toJSON() const;
+  static BrInstr fromJSON(AnsiString);
 
   virtual ~BrInstr();
 
@@ -195,6 +241,8 @@ public:
   virtual Register& getValue();
   virtual AnsiString& getLabel();
 
+  virtual AnsiString toJSON() const;
+  static PhiCase fromJSON(AnsiString);
 
   virtual ~PhiCase();
 
@@ -209,6 +257,8 @@ class PhiCases : public DynSet<PhiCase> {
 public:
   PhiCases();
 
+  virtual AnsiString toJSON() const;
+  static PhiCases fromJSON(AnsiString);
 
   virtual ~PhiCases();
 
@@ -229,6 +279,8 @@ public:
   virtual Register& getRet();
   virtual PhiCases& getCaseses();
 
+  virtual AnsiString toJSON() const;
+  static PhiInstr fromJSON(AnsiString);
 
   virtual ~PhiInstr();
 
@@ -278,6 +330,8 @@ public:
   virtual const Register& asPrintInstr() const;
   virtual Register& asPrintInstr();
 
+  virtual AnsiString toJSON() const;
+  static Instr fromJSON(AnsiString);
 
   virtual ~Instr();
 
@@ -300,6 +354,8 @@ class InstrArray : public DynSet<Instr> {
 public:
   InstrArray();
 
+  virtual AnsiString toJSON() const;
+  static InstrArray fromJSON(AnsiString);
 
   virtual ~InstrArray();
 
@@ -317,6 +373,8 @@ public:
   virtual AnsiString& getName();
   virtual InstrArray& getBody();
 
+  virtual AnsiString toJSON() const;
+  static LLVMBlock fromJSON(AnsiString);
 
   virtual ~LLVMBlock();
 
@@ -331,6 +389,8 @@ class LLVMBlockArray : public DynSet<LLVMBlock> {
 public:
   LLVMBlockArray();
 
+  virtual AnsiString toJSON() const;
+  static LLVMBlockArray fromJSON(AnsiString);
 
   virtual ~LLVMBlockArray();
 
@@ -348,6 +408,8 @@ public:
   virtual Register& getReg();
   virtual AnsiString& getName();
 
+  virtual AnsiString toJSON() const;
+  static LLVMFunctionArgument fromJSON(AnsiString);
 
   virtual ~LLVMFunctionArgument();
 
@@ -362,8 +424,42 @@ class LLVMFunctionArgumentArray : public DynSet<LLVMFunctionArgument> {
 public:
   LLVMFunctionArgumentArray();
 
+  virtual AnsiString toJSON() const;
+  static LLVMFunctionArgumentArray fromJSON(AnsiString);
 
   virtual ~LLVMFunctionArgumentArray();
+
+};
+//----------------------------------
+
+//------------- LLVMFunctionType ---------------
+class LLVMFunctionType {
+  int _type;
+  void* _ptr;
+
+  static const int _TypeVoid;
+  static const int _TypeObj;
+
+  virtual void init(int, void*);
+  virtual void clean();
+  LLVMFunctionType();
+public:
+  LLVMFunctionType(const LLVMFunctionType&);
+  virtual LLVMFunctionType& operator=(const LLVMFunctionType&);
+
+  virtual bool isVoid() const;
+  virtual bool isObj() const;
+
+  virtual const RegisterKind& asObj() const;
+  virtual RegisterKind& asObj();
+
+  virtual AnsiString toJSON() const;
+  static LLVMFunctionType fromJSON(AnsiString);
+
+  virtual ~LLVMFunctionType();
+
+  static LLVMFunctionType createVoid();
+  static LLVMFunctionType createObj(const RegisterKind&);
 
 };
 //----------------------------------
@@ -371,20 +467,22 @@ public:
 //------------- LLVMFunction ---------------
 class LLVMFunction {
   AnsiString name;
-  RegisterKind type;
+  LLVMFunctionType type;
   LLVMFunctionArgumentArray args;
   LLVMBlockArray blocks;
 public:
-  LLVMFunction(const AnsiString&, const RegisterKind&, const LLVMFunctionArgumentArray&, const LLVMBlockArray&);
+  LLVMFunction(const AnsiString&, const LLVMFunctionType&, const LLVMFunctionArgumentArray&, const LLVMBlockArray&);
   virtual const AnsiString& getName() const;
-  virtual const RegisterKind& getType() const;
+  virtual const LLVMFunctionType& getType() const;
   virtual const LLVMFunctionArgumentArray& getArgs() const;
   virtual const LLVMBlockArray& getBlocks() const;
   virtual AnsiString& getName();
-  virtual RegisterKind& getType();
+  virtual LLVMFunctionType& getType();
   virtual LLVMFunctionArgumentArray& getArgs();
   virtual LLVMBlockArray& getBlocks();
 
+  virtual AnsiString toJSON() const;
+  static LLVMFunction fromJSON(AnsiString);
 
   virtual ~LLVMFunction();
 
@@ -399,6 +497,8 @@ class LLVMProgram : public DynSet<LLVMFunction> {
 public:
   LLVMProgram();
 
+  virtual AnsiString toJSON() const;
+  static LLVMProgram fromJSON(AnsiString);
 
   virtual ~LLVMProgram();
 

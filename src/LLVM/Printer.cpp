@@ -24,7 +24,12 @@ AnsiString Printer::renderBlock(const LLVMBlock& block) {
 
 void Printer::printFunction(const LLVMFunction& function) {
   AnsiString outString = "define ";
-  outString += renderRegisterKind(function.getType()) + " @" + function.getName() + "(";
+  if(function.getType().isVoid()) {
+    outString += "void";
+  } else {
+    outString += renderRegisterKind(function.getType().asObj());
+  }
+  outString +=  " @" + function.getName() + "(";
   for(int i=0;i<function.getArgs().Size();i++) {
     if(i>0)
       outString += ", ";
@@ -70,11 +75,14 @@ AnsiString Printer::renderBody(const InstrArray& instrs) {
 }
 
 AnsiString Printer::renderCallInstr(const CallInstr& instr) {
-  AnsiString outString = "call ";
-  if(instr.getRetType().isNull())
+  AnsiString outString;
+  if(instr.getRetType().isObj())
+    outString += renderRegister(instr.getRetType().asObj()) + " = ";
+  outString += "call ";
+  if(instr.getRetType().isVoid())
     outString += "void";
   else
-    outString += renderRegisterKind(instr.getRetType());
+    outString += renderRegisterKind(instr.getRetType().asObj().getKind());
   outString += " @" + instr.getFunction() + "(";
   for(int i=0;i<instr.getArgs().Size();i++) {
     if(i>0)

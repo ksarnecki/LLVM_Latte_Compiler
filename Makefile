@@ -16,12 +16,12 @@ LLVM_Compiler: $(OBJ_FILES)
 	$(CC) $(LFLAGS) -o llvm_latte_compiler.bin $(COBJ_FILES) $(LOBJ_FILES) $(DOBJ_FILES)
 
 src/Data/Types.cpp: src/Data/Types.dd
-	bin/CodeGen < src/Data/Types.dd && \
+	bin/CodeGen -json < src/Data/Types.dd && \
     mv Types.cpp src/Data && \
     mv Types.h src/Data
 
 src/Data/%.cpp: src/Data/%.dd
-	bin/CodeGen < $< && \
+	bin/CodeGen -json < $< && \
     mv *.cpp src/Data && \
     mv *.h src/Data
 

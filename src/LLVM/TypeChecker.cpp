@@ -28,28 +28,28 @@ void TypeChecker::visitFnDef(FnDef *fndef)
   fndef->lattetype_->accept(this);
   Type funRetType = actType;
   TypeArray funArgs;
-  TypeCheckerEnviroment env = enviroment;
+  TypeCheckerEnviroment fenv = enviroment;
   for (ListArg::iterator i = fndef->listarg_->begin() ; i != fndef->listarg_->end() ; ++i)
   {
     if(Ar *arg = dynamic_cast<Ar*>(*i)) {
       arg->lattetype_->accept(this);
       funArgs.Insert(actType);
-      TypeCheckerManager::addIdent(arg->ident_, actType, 0, env, store);
+      TypeCheckerManager::addIdent(arg->ident_, actType, 0, fenv, store);
     } else {
       throw Exception("[typeChecker::visitFnDef] unknown arg kind");
     }
   }
   actRet = Type::createNull();
 
-  TypeCheckerManager::addIdent(fndef->ident_, 
-    Type::createFunction(FunctionType(funRetType, funArgs, env)), 
-    actNesting, enviroment, store);
-  TypeCheckerManager::addIdent(fndef->ident_, 
-    Type::createFunction(FunctionType(funRetType, funArgs, env)), 
-    actNesting, env, store);
+  Type function = Type::createFunction(FunctionType(funRetType, funArgs, fenv));
+
+  TypeCheckerManager::addIdent(fndef->ident_, function, actNesting, function.asFunction().getEnv(), store);
+
+  TypeCheckerManager::addIdent(fndef->ident_, function, actNesting, enviroment, store);
+
 
   TypeCheckerEnviroment prev = enviroment;
-  enviroment = env;
+  enviroment = function.asFunction().getEnv();
   fndef->block_->accept(this);
   enviroment = prev;
 
@@ -274,7 +274,7 @@ void TypeChecker::visitEString(EString *estring)
 void TypeChecker::visitNeg(Neg *neg)
 {
   neg->expr_->accept(this);
-  if(TypeCheckerManager::bsc(actType)) {
+  if(!TypeCheckerManager::bsc(actType)) {
     addError(neg->expr_->line_number, "Bad expression type");
   }
 }
@@ -282,7 +282,7 @@ void TypeChecker::visitNeg(Neg *neg)
 void TypeChecker::visitNott(Nott *nott)
 {
   nott->expr_->accept(this);
-  if(TypeCheckerManager::bsc(actType)) {
+  if(!TypeCheckerManager::bsc(actType)) {
     addError(nott->expr_->line_number, "Bad expression type");
   }
 }

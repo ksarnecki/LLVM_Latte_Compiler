@@ -1,6 +1,8 @@
 
 #include "Register.h"
 #include "Exception.h"
+#include "StringBuffer.h"
+#include "JSONUtil.h"
 //------------- int ---------------
 //----------------------------------
 
@@ -104,6 +106,73 @@ RegisterKind& RegisterKind::asPtr() {
   return *(RegisterKind*) _ptr;
 }
 
+AnsiString RegisterKind::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+      _json += "0";
+    else if (_type==1)
+      _json += "0";
+    else if (_type==2)
+      _json += "0";
+    else if (_type==3)
+      _json += "0";
+    else if (_type==4)
+    _json += ((RegisterKind*) _ptr)->toJSON();
+    else if (_type==5)
+      _json += "0";
+    else
+      throw Exception("RegisterKind::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+RegisterKind RegisterKind::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("RegisterKind::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    return RegisterKind::createValueI1();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    return RegisterKind::createValueI8();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
+    return RegisterKind::createValueI32();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
+    return RegisterKind::createValueDouble();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("RegisterKind::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return RegisterKind::createPtr(RegisterKind::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("5")) {
+    return RegisterKind::createNull();
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("RegisterKind::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("valueI1")) {
+    return RegisterKind::createValueI1();
+  } else if (variantName==("valueI8")) {
+    return RegisterKind::createValueI8();
+  } else if (variantName==("valueI32")) {
+    return RegisterKind::createValueI32();
+  } else if (variantName==("valueDouble")) {
+    return RegisterKind::createValueDouble();
+  } else if (variantName==("ptr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("RegisterKind::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return RegisterKind::createPtr(RegisterKind::fromJSON(s));
+  } else if (variantName==("null")) {
+    return RegisterKind::createNull();
+  } else 
+    throw Exception("RegisterKind::fromJSON");
+}
 
 RegisterKind::~RegisterKind() {
   clean();
@@ -163,12 +232,111 @@ const RegisterKind& Register::getKind() const {
 RegisterKind& Register::getKind() {
   return kind;
 }
+AnsiString Register::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"id\":";
+    _json += AnsiString(id);
+    _json += ",";
+    _json += "\"kind\":";
+    _json += kind.toJSON();
+  _json += "}";
+  return _json.get();
+}
+Register Register::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("Register::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("Register::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return Register(atoi(arr[0].c_str()), RegisterKind::fromJSON(arr[1]));
+}
 Register::~Register() {
 }
 //----------------------------------
 
 //------------- Registers ---------------
 Registers::Registers() {
+}
+AnsiString Registers::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+Registers Registers::fromJSON(AnsiString s) {
+  Registers arr = Registers();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("Registers::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("Registers::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(Register::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
 }
 Registers::~Registers() {
 }
@@ -188,6 +356,55 @@ const Registers& RegisterData::getRegisters() const {
 }
 Registers& RegisterData::getRegisters() {
   return registers;
+}
+AnsiString RegisterData::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"lastRegister\":";
+    _json += lastRegister.toJSON();
+    _json += ",";
+    _json += "\"registers\":";
+    _json += registers.toJSON();
+  _json += "}";
+  return _json.get();
+}
+RegisterData RegisterData::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("RegisterData::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("RegisterData::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return RegisterData(Register::fromJSON(arr[0]), Registers::fromJSON(arr[1]));
 }
 RegisterData::~RegisterData() {
 }

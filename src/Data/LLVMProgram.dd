@@ -36,8 +36,13 @@ BinaryOperation = record {
   bop : BinaryOperator
 }
 
+CallInstrRet = variant {
+  void,
+  obj : Register  
+}
+
 CallInstr = record {
-  retType : RegisterKind,
+  retType : CallInstrRet,
   function : string,
   args : Registers
 }
@@ -91,9 +96,14 @@ LLVMFunctionArgument = record {
 
 LLVMFunctionArgumentArray = array of LLVMFunctionArgument
 
+LLVMFunctionType = variant {
+  void,
+  obj : RegisterKind
+}
+
 LLVMFunction = record {
     name : string,
-    type : RegisterKind,
+    type : LLVMFunctionType,
     args : LLVMFunctionArgumentArray,
 	blocks : LLVMBlockArray
 }

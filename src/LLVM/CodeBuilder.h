@@ -93,7 +93,7 @@ public:
   void visitIdent(Ident x);
 
   void addPredefinied() {
-    Object o1 = Object::createFunction(FunctionObject(RegisterKind::createNull()));
+    Object o1 = Object::createFunction(FunctionObject(LLVMFunctionType::createVoid()));
     updateEnviroment("printInt", o1);
   }
 

@@ -1,6 +1,8 @@
 
 #include "LLVMProgram.h"
 #include "Exception.h"
+#include "StringBuffer.h"
+#include "JSONUtil.h"
 //------------- int ---------------
 //----------------------------------
 
@@ -76,6 +78,55 @@ AnsiString& BinaryOperationArgument::asNumber() {
   return *(AnsiString*) _ptr;
 }
 
+AnsiString BinaryOperationArgument::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==1)
+    _json += "\"" + JSONEscape::encode(*((AnsiString*) _ptr)) + "\"";
+    else
+      throw Exception("BinaryOperationArgument::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+BinaryOperationArgument BinaryOperationArgument::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("BinaryOperationArgument::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("BinaryOperationArgument::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return BinaryOperationArgument::createRegister(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("BinaryOperationArgument::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return BinaryOperationArgument::createNumber((s.Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(s.SubString(2, s.Length()-2))));
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("BinaryOperationArgument::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("register")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("BinaryOperationArgument::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return BinaryOperationArgument::createRegister(Register::fromJSON(s));
+  } else if (variantName==("number")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("BinaryOperationArgument::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return BinaryOperationArgument::createNumber((s.Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(s.SubString(2, s.Length()-2))));
+  } else 
+    throw Exception("BinaryOperationArgument::fromJSON");
+}
 
 BinaryOperationArgument::~BinaryOperationArgument() {
   clean();
@@ -235,6 +286,97 @@ bool BinaryOperator::isNe() const {
   return _type==_TypeNe;
 }
 
+AnsiString BinaryOperator::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+      _json += "0";
+    else if (_type==1)
+      _json += "0";
+    else if (_type==2)
+      _json += "0";
+    else if (_type==3)
+      _json += "0";
+    else if (_type==4)
+      _json += "0";
+    else if (_type==5)
+      _json += "0";
+    else if (_type==6)
+      _json += "0";
+    else if (_type==7)
+      _json += "0";
+    else if (_type==8)
+      _json += "0";
+    else if (_type==9)
+      _json += "0";
+    else if (_type==10)
+      _json += "0";
+    else
+      throw Exception("BinaryOperator::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+BinaryOperator BinaryOperator::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("BinaryOperator::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    return BinaryOperator::createAdd();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    return BinaryOperator::createSub();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
+    return BinaryOperator::createDiv();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
+    return BinaryOperator::createMul();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
+    return BinaryOperator::createMod();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("5")) {
+    return BinaryOperator::createLth();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("6")) {
+    return BinaryOperator::createLe();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("7")) {
+    return BinaryOperator::createGth();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("8")) {
+    return BinaryOperator::createGe();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("9")) {
+    return BinaryOperator::createEqu();
+  } else if (s.Length()>ix+1+2 && s.SubString(ix+1, 2)==("10")) {
+    return BinaryOperator::createNe();
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("BinaryOperator::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("add")) {
+    return BinaryOperator::createAdd();
+  } else if (variantName==("sub")) {
+    return BinaryOperator::createSub();
+  } else if (variantName==("div")) {
+    return BinaryOperator::createDiv();
+  } else if (variantName==("mul")) {
+    return BinaryOperator::createMul();
+  } else if (variantName==("mod")) {
+    return BinaryOperator::createMod();
+  } else if (variantName==("lth")) {
+    return BinaryOperator::createLth();
+  } else if (variantName==("le")) {
+    return BinaryOperator::createLe();
+  } else if (variantName==("gth")) {
+    return BinaryOperator::createGth();
+  } else if (variantName==("ge")) {
+    return BinaryOperator::createGe();
+  } else if (variantName==("equ")) {
+    return BinaryOperator::createEqu();
+  } else if (variantName==("ne")) {
+    return BinaryOperator::createNe();
+  } else 
+    throw Exception("BinaryOperator::fromJSON");
+}
 
 BinaryOperator::~BinaryOperator() {
   clean();
@@ -336,17 +478,185 @@ const BinaryOperator& BinaryOperation::getBop() const {
 BinaryOperator& BinaryOperation::getBop() {
   return bop;
 }
+AnsiString BinaryOperation::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"outReg\":";
+    _json += outReg.toJSON();
+    _json += ",";
+    _json += "\"lArg\":";
+    _json += lArg.toJSON();
+    _json += ",";
+    _json += "\"rArg\":";
+    _json += rArg.toJSON();
+    _json += ",";
+    _json += "\"bop\":";
+    _json += bop.toJSON();
+  _json += "}";
+  return _json.get();
+}
+BinaryOperation BinaryOperation::fromJSON(AnsiString s) {
+  AnsiString arr[4];
+  int ix=1;
+  for (int i=0;i<4;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("BinaryOperation::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<4) {
+          if (ix-start-1<=0)
+            throw Exception("BinaryOperation::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return BinaryOperation(Register::fromJSON(arr[0]), BinaryOperationArgument::fromJSON(arr[1]), BinaryOperationArgument::fromJSON(arr[2]), BinaryOperator::fromJSON(arr[3]));
+}
 BinaryOperation::~BinaryOperation() {
 }
 //----------------------------------
 
-//------------- CallInstr ---------------
-CallInstr::CallInstr(const RegisterKind& _retType, const AnsiString& _function, const Registers& _args) : retType(_retType), function(_function), args(_args) {
+//------------- CallInstrRet ---------------
+const int CallInstrRet::_TypeVoid = 0;
+const int CallInstrRet::_TypeObj = 1;
+void CallInstrRet::init(int type, void* ptr) {
+  if (type==_TypeVoid) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeObj) {
+    _type = type;
+    _ptr = new Register(*(Register*) ptr);
+  }
 }
-const RegisterKind& CallInstr::getRetType() const {
+void CallInstrRet::clean() {
+  if (_type==_TypeVoid) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("CallInstrRet::clean()");
+  } else if (_type==_TypeObj) {
+    _type = -1;
+    delete (Register*) _ptr;
+    _ptr = 0;
+  }
+}
+CallInstrRet::CallInstrRet() : _type(-1), _ptr(0) {
+}
+CallInstrRet::CallInstrRet(const CallInstrRet& _value) {
+  init(_value._type, _value._ptr);
+}
+CallInstrRet& CallInstrRet::operator=(const CallInstrRet& _value) {
+  clean();
+  init(_value._type, _value._ptr);
+  return *this;
+}
+bool CallInstrRet::isVoid() const {
+  return _type==_TypeVoid;
+}
+bool CallInstrRet::isObj() const {
+  return _type==_TypeObj;
+}
+const Register& CallInstrRet::asObj() const {
+  if (_type!=_TypeObj)
+    throw Exception("CallInstrRet::asObj");
+  return *(Register*) _ptr;
+}
+Register& CallInstrRet::asObj() {
+  if (_type!=_TypeObj)
+    throw Exception("CallInstrRet::asObj");
+  return *(Register*) _ptr;
+}
+
+AnsiString CallInstrRet::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+      _json += "0";
+    else if (_type==1)
+    _json += ((Register*) _ptr)->toJSON();
+    else
+      throw Exception("CallInstrRet::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+CallInstrRet CallInstrRet::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("CallInstrRet::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    return CallInstrRet::createVoid();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("CallInstrRet::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return CallInstrRet::createObj(Register::fromJSON(s));
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("CallInstrRet::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("void")) {
+    return CallInstrRet::createVoid();
+  } else if (variantName==("obj")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("CallInstrRet::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return CallInstrRet::createObj(Register::fromJSON(s));
+  } else 
+    throw Exception("CallInstrRet::fromJSON");
+}
+
+CallInstrRet::~CallInstrRet() {
+  clean();
+}
+CallInstrRet CallInstrRet::createVoid() {
+  CallInstrRet _value;
+  _value._type = _TypeVoid;
+  _value._ptr = 0;
+  return _value;
+}
+CallInstrRet CallInstrRet::createObj(const Register& _param) {
+  CallInstrRet _value;
+  _value._type = _TypeObj;
+  _value._ptr = new Register(_param);
+  return _value;
+}
+
+
+//----------------------------------
+
+//------------- CallInstr ---------------
+CallInstr::CallInstr(const CallInstrRet& _retType, const AnsiString& _function, const Registers& _args) : retType(_retType), function(_function), args(_args) {
+}
+const CallInstrRet& CallInstr::getRetType() const {
   return retType;
 }
-RegisterKind& CallInstr::getRetType() {
+CallInstrRet& CallInstr::getRetType() {
   return retType;
 }
 const AnsiString& CallInstr::getFunction() const {
@@ -360,6 +670,58 @@ const Registers& CallInstr::getArgs() const {
 }
 Registers& CallInstr::getArgs() {
   return args;
+}
+AnsiString CallInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"retType\":";
+    _json += retType.toJSON();
+    _json += ",";
+    _json += "\"function\":";
+    _json += "\"" + JSONEscape::encode(function) + "\"";
+    _json += ",";
+    _json += "\"args\":";
+    _json += args.toJSON();
+  _json += "}";
+  return _json.get();
+}
+CallInstr CallInstr::fromJSON(AnsiString s) {
+  AnsiString arr[3];
+  int ix=1;
+  for (int i=0;i<3;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("CallInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<3) {
+          if (ix-start-1<=0)
+            throw Exception("CallInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return CallInstr(CallInstrRet::fromJSON(arr[0]), (arr[1].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[1].SubString(2, arr[1].Length()-2))), Registers::fromJSON(arr[2]));
 }
 CallInstr::~CallInstr() {
 }
@@ -386,6 +748,58 @@ const AnsiString& BrIfInstr::getIfFalseBlock() const {
 AnsiString& BrIfInstr::getIfFalseBlock() {
   return ifFalseBlock;
 }
+AnsiString BrIfInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"cond\":";
+    _json += cond.toJSON();
+    _json += ",";
+    _json += "\"ifTrueBlock\":";
+    _json += "\"" + JSONEscape::encode(ifTrueBlock) + "\"";
+    _json += ",";
+    _json += "\"ifFalseBlock\":";
+    _json += "\"" + JSONEscape::encode(ifFalseBlock) + "\"";
+  _json += "}";
+  return _json.get();
+}
+BrIfInstr BrIfInstr::fromJSON(AnsiString s) {
+  AnsiString arr[3];
+  int ix=1;
+  for (int i=0;i<3;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("BrIfInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<3) {
+          if (ix-start-1<=0)
+            throw Exception("BrIfInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return BrIfInstr(Register::fromJSON(arr[0]), (arr[1].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[1].SubString(2, arr[1].Length()-2))), (arr[2].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[2].SubString(2, arr[2].Length()-2))));
+}
 BrIfInstr::~BrIfInstr() {
 }
 //----------------------------------
@@ -398,6 +812,52 @@ const AnsiString& BrInstr::getBlock() const {
 }
 AnsiString& BrInstr::getBlock() {
   return block;
+}
+AnsiString BrInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"block\":";
+    _json += "\"" + JSONEscape::encode(block) + "\"";
+  _json += "}";
+  return _json.get();
+}
+BrInstr BrInstr::fromJSON(AnsiString s) {
+  AnsiString arr[1];
+  int ix=1;
+  for (int i=0;i<1;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("BrInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<1) {
+          if (ix-start-1<=0)
+            throw Exception("BrInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return BrInstr((arr[0].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[0].SubString(2, arr[0].Length()-2))));
 }
 BrInstr::~BrInstr() {
 }
@@ -418,12 +878,111 @@ const AnsiString& PhiCase::getLabel() const {
 AnsiString& PhiCase::getLabel() {
   return label;
 }
+AnsiString PhiCase::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"value\":";
+    _json += value.toJSON();
+    _json += ",";
+    _json += "\"label\":";
+    _json += "\"" + JSONEscape::encode(label) + "\"";
+  _json += "}";
+  return _json.get();
+}
+PhiCase PhiCase::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("PhiCase::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("PhiCase::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return PhiCase(Register::fromJSON(arr[0]), (arr[1].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[1].SubString(2, arr[1].Length()-2))));
+}
 PhiCase::~PhiCase() {
 }
 //----------------------------------
 
 //------------- PhiCases ---------------
 PhiCases::PhiCases() {
+}
+AnsiString PhiCases::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+PhiCases PhiCases::fromJSON(AnsiString s) {
+  PhiCases arr = PhiCases();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("PhiCases::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("PhiCases::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(PhiCase::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
 }
 PhiCases::~PhiCases() {
 }
@@ -449,6 +1008,58 @@ const PhiCases& PhiInstr::getCaseses() const {
 }
 PhiCases& PhiInstr::getCaseses() {
   return caseses;
+}
+AnsiString PhiInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"ident\":";
+    _json += "\"" + JSONEscape::encode(ident) + "\"";
+    _json += ",";
+    _json += "\"ret\":";
+    _json += ret.toJSON();
+    _json += ",";
+    _json += "\"caseses\":";
+    _json += caseses.toJSON();
+  _json += "}";
+  return _json.get();
+}
+PhiInstr PhiInstr::fromJSON(AnsiString s) {
+  AnsiString arr[3];
+  int ix=1;
+  for (int i=0;i<3;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("PhiInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<3) {
+          if (ix-start-1<=0)
+            throw Exception("PhiInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return PhiInstr((arr[0].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[0].SubString(2, arr[0].Length()-2))), Register::fromJSON(arr[1]), PhiCases::fromJSON(arr[2]));
 }
 PhiInstr::~PhiInstr() {
 }
@@ -619,6 +1230,115 @@ Register& Instr::asPrintInstr() {
   return *(Register*) _ptr;
 }
 
+AnsiString Instr::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+    _json += ((BinaryOperation*) _ptr)->toJSON();
+    else if (_type==1)
+    _json += ((CallInstr*) _ptr)->toJSON();
+    else if (_type==2)
+    _json += ((PhiInstr*) _ptr)->toJSON();
+    else if (_type==3)
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==4)
+    _json += ((BrInstr*) _ptr)->toJSON();
+    else if (_type==5)
+    _json += ((BrIfInstr*) _ptr)->toJSON();
+    else if (_type==6)
+    _json += ((Register*) _ptr)->toJSON();
+    else
+      throw Exception("Instr::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+Instr Instr::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("Instr::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createBinaryOperationInstr(BinaryOperation::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createCallInstr(CallInstr::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createPhiInstr(PhiInstr::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createReturnInstr(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createBrInstr(BrInstr::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("5")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createBrIfInstr(BrIfInstr::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("6")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createPrintInstr(Register::fromJSON(s));
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("Instr::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("binaryOperationInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createBinaryOperationInstr(BinaryOperation::fromJSON(s));
+  } else if (variantName==("callInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createCallInstr(CallInstr::fromJSON(s));
+  } else if (variantName==("phiInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createPhiInstr(PhiInstr::fromJSON(s));
+  } else if (variantName==("returnInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createReturnInstr(Register::fromJSON(s));
+  } else if (variantName==("brInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createBrInstr(BrInstr::fromJSON(s));
+  } else if (variantName==("brIfInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createBrIfInstr(BrIfInstr::fromJSON(s));
+  } else if (variantName==("printInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createPrintInstr(Register::fromJSON(s));
+  } else 
+    throw Exception("Instr::fromJSON");
+}
 
 Instr::~Instr() {
   clean();
@@ -672,6 +1392,56 @@ Instr Instr::createPrintInstr(const Register& _param) {
 //------------- InstrArray ---------------
 InstrArray::InstrArray() {
 }
+AnsiString InstrArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+InstrArray InstrArray::fromJSON(AnsiString s) {
+  InstrArray arr = InstrArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("InstrArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("InstrArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(Instr::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
+}
 InstrArray::~InstrArray() {
 }
 //----------------------------------
@@ -691,12 +1461,111 @@ const InstrArray& LLVMBlock::getBody() const {
 InstrArray& LLVMBlock::getBody() {
   return body;
 }
+AnsiString LLVMBlock::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"name\":";
+    _json += "\"" + JSONEscape::encode(name) + "\"";
+    _json += ",";
+    _json += "\"body\":";
+    _json += body.toJSON();
+  _json += "}";
+  return _json.get();
+}
+LLVMBlock LLVMBlock::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("LLVMBlock::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("LLVMBlock::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return LLVMBlock((arr[0].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[0].SubString(2, arr[0].Length()-2))), InstrArray::fromJSON(arr[1]));
+}
 LLVMBlock::~LLVMBlock() {
 }
 //----------------------------------
 
 //------------- LLVMBlockArray ---------------
 LLVMBlockArray::LLVMBlockArray() {
+}
+AnsiString LLVMBlockArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+LLVMBlockArray LLVMBlockArray::fromJSON(AnsiString s) {
+  LLVMBlockArray arr = LLVMBlockArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("LLVMBlockArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("LLVMBlockArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(LLVMBlock::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
 }
 LLVMBlockArray::~LLVMBlockArray() {
 }
@@ -717,6 +1586,55 @@ const AnsiString& LLVMFunctionArgument::getName() const {
 AnsiString& LLVMFunctionArgument::getName() {
   return name;
 }
+AnsiString LLVMFunctionArgument::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"reg\":";
+    _json += reg.toJSON();
+    _json += ",";
+    _json += "\"name\":";
+    _json += "\"" + JSONEscape::encode(name) + "\"";
+  _json += "}";
+  return _json.get();
+}
+LLVMFunctionArgument LLVMFunctionArgument::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("LLVMFunctionArgument::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("LLVMFunctionArgument::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return LLVMFunctionArgument(Register::fromJSON(arr[0]), (arr[1].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[1].SubString(2, arr[1].Length()-2))));
+}
 LLVMFunctionArgument::~LLVMFunctionArgument() {
 }
 //----------------------------------
@@ -724,12 +1642,175 @@ LLVMFunctionArgument::~LLVMFunctionArgument() {
 //------------- LLVMFunctionArgumentArray ---------------
 LLVMFunctionArgumentArray::LLVMFunctionArgumentArray() {
 }
+AnsiString LLVMFunctionArgumentArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+LLVMFunctionArgumentArray LLVMFunctionArgumentArray::fromJSON(AnsiString s) {
+  LLVMFunctionArgumentArray arr = LLVMFunctionArgumentArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("LLVMFunctionArgumentArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("LLVMFunctionArgumentArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(LLVMFunctionArgument::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
+}
 LLVMFunctionArgumentArray::~LLVMFunctionArgumentArray() {
 }
 //----------------------------------
 
+//------------- LLVMFunctionType ---------------
+const int LLVMFunctionType::_TypeVoid = 0;
+const int LLVMFunctionType::_TypeObj = 1;
+void LLVMFunctionType::init(int type, void* ptr) {
+  if (type==_TypeVoid) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeObj) {
+    _type = type;
+    _ptr = new RegisterKind(*(RegisterKind*) ptr);
+  }
+}
+void LLVMFunctionType::clean() {
+  if (_type==_TypeVoid) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("LLVMFunctionType::clean()");
+  } else if (_type==_TypeObj) {
+    _type = -1;
+    delete (RegisterKind*) _ptr;
+    _ptr = 0;
+  }
+}
+LLVMFunctionType::LLVMFunctionType() : _type(-1), _ptr(0) {
+}
+LLVMFunctionType::LLVMFunctionType(const LLVMFunctionType& _value) {
+  init(_value._type, _value._ptr);
+}
+LLVMFunctionType& LLVMFunctionType::operator=(const LLVMFunctionType& _value) {
+  clean();
+  init(_value._type, _value._ptr);
+  return *this;
+}
+bool LLVMFunctionType::isVoid() const {
+  return _type==_TypeVoid;
+}
+bool LLVMFunctionType::isObj() const {
+  return _type==_TypeObj;
+}
+const RegisterKind& LLVMFunctionType::asObj() const {
+  if (_type!=_TypeObj)
+    throw Exception("LLVMFunctionType::asObj");
+  return *(RegisterKind*) _ptr;
+}
+RegisterKind& LLVMFunctionType::asObj() {
+  if (_type!=_TypeObj)
+    throw Exception("LLVMFunctionType::asObj");
+  return *(RegisterKind*) _ptr;
+}
+
+AnsiString LLVMFunctionType::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+      _json += "0";
+    else if (_type==1)
+    _json += ((RegisterKind*) _ptr)->toJSON();
+    else
+      throw Exception("LLVMFunctionType::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+LLVMFunctionType LLVMFunctionType::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("LLVMFunctionType::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    return LLVMFunctionType::createVoid();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("LLVMFunctionType::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return LLVMFunctionType::createObj(RegisterKind::fromJSON(s));
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("LLVMFunctionType::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("void")) {
+    return LLVMFunctionType::createVoid();
+  } else if (variantName==("obj")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("LLVMFunctionType::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return LLVMFunctionType::createObj(RegisterKind::fromJSON(s));
+  } else 
+    throw Exception("LLVMFunctionType::fromJSON");
+}
+
+LLVMFunctionType::~LLVMFunctionType() {
+  clean();
+}
+LLVMFunctionType LLVMFunctionType::createVoid() {
+  LLVMFunctionType _value;
+  _value._type = _TypeVoid;
+  _value._ptr = 0;
+  return _value;
+}
+LLVMFunctionType LLVMFunctionType::createObj(const RegisterKind& _param) {
+  LLVMFunctionType _value;
+  _value._type = _TypeObj;
+  _value._ptr = new RegisterKind(_param);
+  return _value;
+}
+
+
+//----------------------------------
+
 //------------- LLVMFunction ---------------
-LLVMFunction::LLVMFunction(const AnsiString& _name, const RegisterKind& _type, const LLVMFunctionArgumentArray& _args, const LLVMBlockArray& _blocks) : name(_name), type(_type), args(_args), blocks(_blocks) {
+LLVMFunction::LLVMFunction(const AnsiString& _name, const LLVMFunctionType& _type, const LLVMFunctionArgumentArray& _args, const LLVMBlockArray& _blocks) : name(_name), type(_type), args(_args), blocks(_blocks) {
 }
 const AnsiString& LLVMFunction::getName() const {
   return name;
@@ -737,10 +1818,10 @@ const AnsiString& LLVMFunction::getName() const {
 AnsiString& LLVMFunction::getName() {
   return name;
 }
-const RegisterKind& LLVMFunction::getType() const {
+const LLVMFunctionType& LLVMFunction::getType() const {
   return type;
 }
-RegisterKind& LLVMFunction::getType() {
+LLVMFunctionType& LLVMFunction::getType() {
   return type;
 }
 const LLVMFunctionArgumentArray& LLVMFunction::getArgs() const {
@@ -755,12 +1836,117 @@ const LLVMBlockArray& LLVMFunction::getBlocks() const {
 LLVMBlockArray& LLVMFunction::getBlocks() {
   return blocks;
 }
+AnsiString LLVMFunction::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"name\":";
+    _json += "\"" + JSONEscape::encode(name) + "\"";
+    _json += ",";
+    _json += "\"type\":";
+    _json += type.toJSON();
+    _json += ",";
+    _json += "\"args\":";
+    _json += args.toJSON();
+    _json += ",";
+    _json += "\"blocks\":";
+    _json += blocks.toJSON();
+  _json += "}";
+  return _json.get();
+}
+LLVMFunction LLVMFunction::fromJSON(AnsiString s) {
+  AnsiString arr[4];
+  int ix=1;
+  for (int i=0;i<4;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("LLVMFunction::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<4) {
+          if (ix-start-1<=0)
+            throw Exception("LLVMFunction::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return LLVMFunction((arr[0].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[0].SubString(2, arr[0].Length()-2))), LLVMFunctionType::fromJSON(arr[1]), LLVMFunctionArgumentArray::fromJSON(arr[2]), LLVMBlockArray::fromJSON(arr[3]));
+}
 LLVMFunction::~LLVMFunction() {
 }
 //----------------------------------
 
 //------------- LLVMProgram ---------------
 LLVMProgram::LLVMProgram() {
+}
+AnsiString LLVMProgram::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
+  LLVMProgram arr = LLVMProgram();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("LLVMProgram::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("LLVMProgram::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(LLVMFunction::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
 }
 LLVMProgram::~LLVMProgram() {
 }

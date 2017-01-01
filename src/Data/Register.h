@@ -1,6 +1,8 @@
 #ifndef _REGISTER_GEN_H_
 #define _REGISTER_GEN_H_
 #include "DynSet.h"
+#include <stdio.h>
+#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -41,6 +43,8 @@ public:
   virtual const RegisterKind& asPtr() const;
   virtual RegisterKind& asPtr();
 
+  virtual AnsiString toJSON() const;
+  static RegisterKind fromJSON(AnsiString);
 
   virtual ~RegisterKind();
 
@@ -65,6 +69,8 @@ public:
   virtual int& getId();
   virtual RegisterKind& getKind();
 
+  virtual AnsiString toJSON() const;
+  static Register fromJSON(AnsiString);
 
   virtual ~Register();
 
@@ -79,6 +85,8 @@ class Registers : public DynSet<Register> {
 public:
   Registers();
 
+  virtual AnsiString toJSON() const;
+  static Registers fromJSON(AnsiString);
 
   virtual ~Registers();
 
@@ -96,6 +104,8 @@ public:
   virtual Register& getLastRegister();
   virtual Registers& getRegisters();
 
+  virtual AnsiString toJSON() const;
+  static RegisterData fromJSON(AnsiString);
 
   virtual ~RegisterData();
 

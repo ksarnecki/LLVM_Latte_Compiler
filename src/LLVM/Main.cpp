@@ -5,6 +5,7 @@
 #include "TypeChecker.h"
 #include "CodeBuilder.h"
 #include "Printer.h"
+#include "Opt.h"
 
 int main(int argc, char ** argv) {
   Program *parse_tree = pProgram(stdin);
@@ -13,6 +14,7 @@ int main(int argc, char ** argv) {
   	typeChecker.check(parse_tree);
     CodeBuilder cb;
     LLVMProgram program = cb.compile(parse_tree);
+    Opt::o0(program);
     Printer::print(program);
     return 0;
   }

@@ -1,6 +1,8 @@
 #ifndef _TYPECHECKERENVIROMENT_GEN_H_
 #define _TYPECHECKERENVIROMENT_GEN_H_
 #include "DynSet.h"
+#include <stdio.h>
+#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -8,24 +10,22 @@
 #include "AnsiString.h"
 //----------------------------------
 
-//------------- Ident ---------------
-#include "Absyn.H"
-//----------------------------------
-
 //------------- TypeCheckerEnviromentElement ---------------
 class TypeCheckerEnviromentElement {
-  Ident ident;
+  AnsiString ident;
   int storeId;
   int nesting;
 public:
-  TypeCheckerEnviromentElement(const Ident&, const int&, const int&);
-  virtual const Ident& getIdent() const;
+  TypeCheckerEnviromentElement(const AnsiString&, const int&, const int&);
+  virtual const AnsiString& getIdent() const;
   virtual const int& getStoreId() const;
   virtual const int& getNesting() const;
-  virtual Ident& getIdent();
+  virtual AnsiString& getIdent();
   virtual int& getStoreId();
   virtual int& getNesting();
 
+  virtual AnsiString toJSON() const;
+  static TypeCheckerEnviromentElement fromJSON(AnsiString);
 
   virtual ~TypeCheckerEnviromentElement();
 
@@ -40,6 +40,8 @@ class TypeCheckerEnviroment : public DynSet<TypeCheckerEnviromentElement> {
 public:
   TypeCheckerEnviroment();
 
+  virtual AnsiString toJSON() const;
+  static TypeCheckerEnviroment fromJSON(AnsiString);
 
   virtual ~TypeCheckerEnviroment();
 

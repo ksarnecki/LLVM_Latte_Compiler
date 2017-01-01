@@ -1,6 +1,8 @@
 #ifndef _STORE_GEN_H_
 #define _STORE_GEN_H_
 #include "DynSet.h"
+#include <stdio.h>
+#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -14,6 +16,10 @@
 
 //------------- Register ---------------
 #include "Register.h"
+//----------------------------------
+
+//------------- LLVMFunctionType ---------------
+#include "LLVMProgram.h"
 //----------------------------------
 
 //------------- RegisterKind ---------------
@@ -55,6 +61,8 @@ public:
   virtual const Register& asString() const;
   virtual Register& asString();
 
+  virtual AnsiString toJSON() const;
+  static BasicObject fromJSON(AnsiString);
 
   virtual ~BasicObject();
 
@@ -69,12 +77,14 @@ public:
 
 //------------- FunctionObject ---------------
 class FunctionObject {
-  RegisterKind type;
+  LLVMFunctionType type;
 public:
-  FunctionObject(const RegisterKind&);
-  virtual const RegisterKind& getType() const;
-  virtual RegisterKind& getType();
+  FunctionObject(const LLVMFunctionType&);
+  virtual const LLVMFunctionType& getType() const;
+  virtual LLVMFunctionType& getType();
 
+  virtual AnsiString toJSON() const;
+  static FunctionObject fromJSON(AnsiString);
 
   virtual ~FunctionObject();
 
@@ -108,6 +118,8 @@ public:
   virtual const FunctionObject& asFunction() const;
   virtual FunctionObject& asFunction();
 
+  virtual AnsiString toJSON() const;
+  static Object fromJSON(AnsiString);
 
   virtual ~Object();
 
@@ -130,6 +142,8 @@ public:
   virtual int& getId();
   virtual Object& getObj();
 
+  virtual AnsiString toJSON() const;
+  static StoreElement fromJSON(AnsiString);
 
   virtual ~StoreElement();
 
@@ -144,6 +158,8 @@ class ObjectArray : public DynSet<Object> {
 public:
   ObjectArray();
 
+  virtual AnsiString toJSON() const;
+  static ObjectArray fromJSON(AnsiString);
 
   virtual ~ObjectArray();
 
@@ -158,6 +174,8 @@ class Store : public DynSet<StoreElement> {
 public:
   Store();
 
+  virtual AnsiString toJSON() const;
+  static Store fromJSON(AnsiString);
 
   virtual ~Store();
 

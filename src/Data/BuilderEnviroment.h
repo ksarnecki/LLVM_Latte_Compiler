@@ -1,6 +1,8 @@
 #ifndef _BUILDERENVIROMENT_GEN_H_
 #define _BUILDERENVIROMENT_GEN_H_
 #include "DynSet.h"
+#include <stdio.h>
+#include <stdlib.h>
 //------------- int ---------------
 //----------------------------------
 
@@ -19,6 +21,8 @@ public:
   virtual AnsiString& getIdent();
   virtual int& getStoreId();
 
+  virtual AnsiString toJSON() const;
+  static BuilderEnviromentElement fromJSON(AnsiString);
 
   virtual ~BuilderEnviromentElement();
 
@@ -33,6 +37,8 @@ class BuilderEnviroment : public DynSet<BuilderEnviromentElement> {
 public:
   BuilderEnviroment();
 
+  virtual AnsiString toJSON() const;
+  static BuilderEnviroment fromJSON(AnsiString);
 
   virtual ~BuilderEnviroment();
 
