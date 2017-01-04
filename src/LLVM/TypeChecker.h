@@ -61,11 +61,15 @@ void visitProgram(Program* p);
   void visitStrType(StrType* p);
   void visitBoolType(BoolType* p);
   void visitVoidType(VoidType* p);
+  void visitArrType(ArrType *p);
   void visitFun(Fun* p);
+  void visitArrAss(ArrAss *p);
   void visitEVar(EVar* p);
   void visitELitInt(ELitInt* p);
   void visitELitTrue(ELitTrue* p);
   void visitELitFalse(ELitFalse* p);
+  void visitEArr(EArr *p);
+  void visitENewArr(ENewArr *enewarr);
   void visitEApp(EApp* p);
   void visitEString(EString* p);
   void visitNeg(Neg* p);
@@ -103,13 +107,10 @@ void visitProgram(Program* p);
     errors.Insert(TypeError(line, msg));
   }
 
-  bool check(Visitable *v) {
-    //printInt
-    TypeArray ta;
-    ta.Insert(Type::createBasic(BasicType::createInt()));
-    TypeCheckerManager::addIdent("printInt", Type::createFunction(FunctionType(Type::createBasic(BasicType::createVoid()), ta, TypeCheckerEnviroment())), 0, enviroment, store);
-    
+  void addPredefinied();
 
+  bool check(Visitable *v) {
+    addPredefinied();
     v->accept(this);
     if(errors.Size()>0) {
       printf("ERROR\n");

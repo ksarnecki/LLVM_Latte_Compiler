@@ -374,6 +374,57 @@ Ass *Ass::clone() const
 
 
 
+/********************   ArrAss    ********************/
+ArrAss::ArrAss(Ident p1, Expr *p2, Expr *p3)
+{
+  ident_ = p1;
+  expr_1 = p2;
+  expr_2 = p3;
+
+}
+
+ArrAss::ArrAss(const ArrAss & other)
+{
+  ident_ = other.ident_;
+  expr_1 = other.expr_1->clone();
+  expr_2 = other.expr_2->clone();
+
+}
+
+ArrAss &ArrAss::operator=(const ArrAss & other)
+{
+  ArrAss tmp(other);
+  swap(tmp);
+  return *this;
+}
+
+void ArrAss::swap(ArrAss & other)
+{
+  std::swap(ident_, other.ident_);
+  std::swap(expr_1, other.expr_1);
+  std::swap(expr_2, other.expr_2);
+
+}
+
+ArrAss::~ArrAss()
+{
+  delete(expr_1);
+  delete(expr_2);
+
+}
+
+void ArrAss::accept(Visitor *v)
+{
+  v->visitArrAss(this);
+}
+
+ArrAss *ArrAss::clone() const
+{
+  return new ArrAss(*this);
+}
+
+
+
 /********************   Incr    ********************/
 Incr::Incr(Ident p1)
 {
@@ -986,6 +1037,50 @@ VoidType *VoidType::clone() const
 
 
 
+/********************   ArrType    ********************/
+ArrType::ArrType(LatteType *p1)
+{
+  lattetype_ = p1;
+
+}
+
+ArrType::ArrType(const ArrType & other)
+{
+  lattetype_ = other.lattetype_->clone();
+
+}
+
+ArrType &ArrType::operator=(const ArrType & other)
+{
+  ArrType tmp(other);
+  swap(tmp);
+  return *this;
+}
+
+void ArrType::swap(ArrType & other)
+{
+  std::swap(lattetype_, other.lattetype_);
+
+}
+
+ArrType::~ArrType()
+{
+  delete(lattetype_);
+
+}
+
+void ArrType::accept(Visitor *v)
+{
+  v->visitArrType(this);
+}
+
+ArrType *ArrType::clone() const
+{
+  return new ArrType(*this);
+}
+
+
+
 /********************   Fun    ********************/
 Fun::Fun(LatteType *p1, ListLatteType *p2)
 {
@@ -1196,6 +1291,101 @@ void ELitFalse::accept(Visitor *v)
 ELitFalse *ELitFalse::clone() const
 {
   return new ELitFalse(*this);
+}
+
+
+
+/********************   ENewArr    ********************/
+ENewArr::ENewArr(LatteType *p1, Expr *p2)
+{
+  lattetype_ = p1;
+  expr_ = p2;
+
+}
+
+ENewArr::ENewArr(const ENewArr & other)
+{
+  lattetype_ = other.lattetype_->clone();
+  expr_ = other.expr_->clone();
+
+}
+
+ENewArr &ENewArr::operator=(const ENewArr & other)
+{
+  ENewArr tmp(other);
+  swap(tmp);
+  return *this;
+}
+
+void ENewArr::swap(ENewArr & other)
+{
+  std::swap(lattetype_, other.lattetype_);
+  std::swap(expr_, other.expr_);
+
+}
+
+ENewArr::~ENewArr()
+{
+  delete(lattetype_);
+  delete(expr_);
+
+}
+
+void ENewArr::accept(Visitor *v)
+{
+  v->visitENewArr(this);
+}
+
+ENewArr *ENewArr::clone() const
+{
+  return new ENewArr(*this);
+}
+
+
+
+/********************   EArr    ********************/
+EArr::EArr(Ident p1, Expr *p2)
+{
+  ident_ = p1;
+  expr_ = p2;
+
+}
+
+EArr::EArr(const EArr & other)
+{
+  ident_ = other.ident_;
+  expr_ = other.expr_->clone();
+
+}
+
+EArr &EArr::operator=(const EArr & other)
+{
+  EArr tmp(other);
+  swap(tmp);
+  return *this;
+}
+
+void EArr::swap(EArr & other)
+{
+  std::swap(ident_, other.ident_);
+  std::swap(expr_, other.expr_);
+
+}
+
+EArr::~EArr()
+{
+  delete(expr_);
+
+}
+
+void EArr::accept(Visitor *v)
+{
+  v->visitEArr(this);
+}
+
+EArr *EArr::clone() const
+{
+  return new EArr(*this);
 }
 
 

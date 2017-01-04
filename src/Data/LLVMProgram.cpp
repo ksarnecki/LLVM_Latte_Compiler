@@ -18,6 +18,66 @@
 //------------- Registers ---------------
 //----------------------------------
 
+//------------- RegisterArray ---------------
+//----------------------------------
+
+//------------- StringArray ---------------
+StringArray::StringArray() {
+}
+AnsiString StringArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += "\"" + JSONEscape::encode((*this)[_i]) + "\"";
+  }
+    _json += "]";
+    return _json.get();
+}
+StringArray StringArray::fromJSON(AnsiString s) {
+  StringArray arr = StringArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("StringArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("StringArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert((tmp.Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(tmp.SubString(2, tmp.Length()-2))));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
+}
+StringArray::~StringArray() {
+}
+//----------------------------------
+
 //------------- BinaryOperationArgument ---------------
 const int BinaryOperationArgument::_TypeRegister = 0;
 const int BinaryOperationArgument::_TypeNumber = 1;
@@ -452,13 +512,19 @@ BinaryOperator BinaryOperator::createNe() {
 //----------------------------------
 
 //------------- BinaryOperation ---------------
-BinaryOperation::BinaryOperation(const Register& _outReg, const BinaryOperationArgument& _lArg, const BinaryOperationArgument& _rArg, const BinaryOperator& _bop) : outReg(_outReg), lArg(_lArg), rArg(_rArg), bop(_bop) {
+BinaryOperation::BinaryOperation(const Register& _outReg, const RegisterKind& _kind, const BinaryOperationArgument& _lArg, const BinaryOperationArgument& _rArg, const BinaryOperator& _bop) : outReg(_outReg), kind(_kind), lArg(_lArg), rArg(_rArg), bop(_bop) {
 }
 const Register& BinaryOperation::getOutReg() const {
   return outReg;
 }
 Register& BinaryOperation::getOutReg() {
   return outReg;
+}
+const RegisterKind& BinaryOperation::getKind() const {
+  return kind;
+}
+RegisterKind& BinaryOperation::getKind() {
+  return kind;
 }
 const BinaryOperationArgument& BinaryOperation::getLArg() const {
   return lArg;
@@ -484,6 +550,9 @@ AnsiString BinaryOperation::toJSON() const {
     _json += "\"outReg\":";
     _json += outReg.toJSON();
     _json += ",";
+    _json += "\"kind\":";
+    _json += kind.toJSON();
+    _json += ",";
     _json += "\"lArg\":";
     _json += lArg.toJSON();
     _json += ",";
@@ -496,9 +565,9 @@ AnsiString BinaryOperation::toJSON() const {
   return _json.get();
 }
 BinaryOperation BinaryOperation::fromJSON(AnsiString s) {
-  AnsiString arr[4];
+  AnsiString arr[5];
   int ix=1;
-  for (int i=0;i<4;i++) {
+  for (int i=0;i<5;i++) {
     while (ix<=s.Length() && s[ix]!=':')
       ix++;
     if (ix>s.Length()) 
@@ -520,7 +589,7 @@ BinaryOperation BinaryOperation::fromJSON(AnsiString s) {
       else if (!inString && s[ix]=='}')
         bracketLevel--;
       if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
-        if (i<4) {
+        if (i<5) {
           if (ix-start-1<=0)
             throw Exception("BinaryOperation::fromJSON");
           arr[i] = s.SubString(start+1, ix-start-1);
@@ -531,7 +600,7 @@ BinaryOperation BinaryOperation::fromJSON(AnsiString s) {
       ix++;
     }
   }
-  return BinaryOperation(Register::fromJSON(arr[0]), BinaryOperationArgument::fromJSON(arr[1]), BinaryOperationArgument::fromJSON(arr[2]), BinaryOperator::fromJSON(arr[3]));
+  return BinaryOperation(Register::fromJSON(arr[0]), RegisterKind::fromJSON(arr[1]), BinaryOperationArgument::fromJSON(arr[2]), BinaryOperationArgument::fromJSON(arr[3]), BinaryOperator::fromJSON(arr[4]));
 }
 BinaryOperation::~BinaryOperation() {
 }
@@ -1065,6 +1134,400 @@ PhiInstr::~PhiInstr() {
 }
 //----------------------------------
 
+//------------- AllocaInstrCount ---------------
+const int AllocaInstrCount::_TypeSingle = 0;
+const int AllocaInstrCount::_TypeMultiple = 1;
+void AllocaInstrCount::init(int type, void* ptr) {
+  if (type==_TypeSingle) {
+    _type = type;
+    _ptr = 0;
+  } else if (type==_TypeMultiple) {
+    _type = type;
+    _ptr = new Register(*(Register*) ptr);
+  }
+}
+void AllocaInstrCount::clean() {
+  if (_type==_TypeSingle) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("AllocaInstrCount::clean()");
+  } else if (_type==_TypeMultiple) {
+    _type = -1;
+    delete (Register*) _ptr;
+    _ptr = 0;
+  }
+}
+AllocaInstrCount::AllocaInstrCount() : _type(-1), _ptr(0) {
+}
+AllocaInstrCount::AllocaInstrCount(const AllocaInstrCount& _value) {
+  init(_value._type, _value._ptr);
+}
+AllocaInstrCount& AllocaInstrCount::operator=(const AllocaInstrCount& _value) {
+  clean();
+  init(_value._type, _value._ptr);
+  return *this;
+}
+bool AllocaInstrCount::isSingle() const {
+  return _type==_TypeSingle;
+}
+bool AllocaInstrCount::isMultiple() const {
+  return _type==_TypeMultiple;
+}
+const Register& AllocaInstrCount::asMultiple() const {
+  if (_type!=_TypeMultiple)
+    throw Exception("AllocaInstrCount::asMultiple");
+  return *(Register*) _ptr;
+}
+Register& AllocaInstrCount::asMultiple() {
+  if (_type!=_TypeMultiple)
+    throw Exception("AllocaInstrCount::asMultiple");
+  return *(Register*) _ptr;
+}
+
+AnsiString AllocaInstrCount::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+      _json += "0";
+    else if (_type==1)
+    _json += ((Register*) _ptr)->toJSON();
+    else
+      throw Exception("AllocaInstrCount::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+AllocaInstrCount AllocaInstrCount::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("AllocaInstrCount::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    return AllocaInstrCount::createSingle();
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("AllocaInstrCount::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return AllocaInstrCount::createMultiple(Register::fromJSON(s));
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("AllocaInstrCount::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("single")) {
+    return AllocaInstrCount::createSingle();
+  } else if (variantName==("multiple")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("AllocaInstrCount::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return AllocaInstrCount::createMultiple(Register::fromJSON(s));
+  } else 
+    throw Exception("AllocaInstrCount::fromJSON");
+}
+
+AllocaInstrCount::~AllocaInstrCount() {
+  clean();
+}
+AllocaInstrCount AllocaInstrCount::createSingle() {
+  AllocaInstrCount _value;
+  _value._type = _TypeSingle;
+  _value._ptr = 0;
+  return _value;
+}
+AllocaInstrCount AllocaInstrCount::createMultiple(const Register& _param) {
+  AllocaInstrCount _value;
+  _value._type = _TypeMultiple;
+  _value._ptr = new Register(_param);
+  return _value;
+}
+
+
+//----------------------------------
+
+//------------- AllocaInstr ---------------
+AllocaInstr::AllocaInstr(const AllocaInstrCount& _count, const Register& _ret) : count(_count), ret(_ret) {
+}
+const AllocaInstrCount& AllocaInstr::getCount() const {
+  return count;
+}
+AllocaInstrCount& AllocaInstr::getCount() {
+  return count;
+}
+const Register& AllocaInstr::getRet() const {
+  return ret;
+}
+Register& AllocaInstr::getRet() {
+  return ret;
+}
+AnsiString AllocaInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"count\":";
+    _json += count.toJSON();
+    _json += ",";
+    _json += "\"ret\":";
+    _json += ret.toJSON();
+  _json += "}";
+  return _json.get();
+}
+AllocaInstr AllocaInstr::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("AllocaInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("AllocaInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return AllocaInstr(AllocaInstrCount::fromJSON(arr[0]), Register::fromJSON(arr[1]));
+}
+AllocaInstr::~AllocaInstr() {
+}
+//----------------------------------
+
+//------------- LoadInstr ---------------
+LoadInstr::LoadInstr(const Register& _ret, const Register& _ptr) : ret(_ret), ptr(_ptr) {
+}
+const Register& LoadInstr::getRet() const {
+  return ret;
+}
+Register& LoadInstr::getRet() {
+  return ret;
+}
+const Register& LoadInstr::getPtr() const {
+  return ptr;
+}
+Register& LoadInstr::getPtr() {
+  return ptr;
+}
+AnsiString LoadInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"ret\":";
+    _json += ret.toJSON();
+    _json += ",";
+    _json += "\"ptr\":";
+    _json += ptr.toJSON();
+  _json += "}";
+  return _json.get();
+}
+LoadInstr LoadInstr::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("LoadInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("LoadInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return LoadInstr(Register::fromJSON(arr[0]), Register::fromJSON(arr[1]));
+}
+LoadInstr::~LoadInstr() {
+}
+//----------------------------------
+
+//------------- StoreInstr ---------------
+StoreInstr::StoreInstr(const Register& _val, const Register& _ptr) : val(_val), ptr(_ptr) {
+}
+const Register& StoreInstr::getVal() const {
+  return val;
+}
+Register& StoreInstr::getVal() {
+  return val;
+}
+const Register& StoreInstr::getPtr() const {
+  return ptr;
+}
+Register& StoreInstr::getPtr() {
+  return ptr;
+}
+AnsiString StoreInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"val\":";
+    _json += val.toJSON();
+    _json += ",";
+    _json += "\"ptr\":";
+    _json += ptr.toJSON();
+  _json += "}";
+  return _json.get();
+}
+StoreInstr StoreInstr::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("StoreInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("StoreInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return StoreInstr(Register::fromJSON(arr[0]), Register::fromJSON(arr[1]));
+}
+StoreInstr::~StoreInstr() {
+}
+//----------------------------------
+
+//------------- GetElementPtrInstr ---------------
+GetElementPtrInstr::GetElementPtrInstr(const Register& _ret, const Register& _ptr, const RegisterArray& _indexes) : ret(_ret), ptr(_ptr), indexes(_indexes) {
+}
+const Register& GetElementPtrInstr::getRet() const {
+  return ret;
+}
+Register& GetElementPtrInstr::getRet() {
+  return ret;
+}
+const Register& GetElementPtrInstr::getPtr() const {
+  return ptr;
+}
+Register& GetElementPtrInstr::getPtr() {
+  return ptr;
+}
+const RegisterArray& GetElementPtrInstr::getIndexes() const {
+  return indexes;
+}
+RegisterArray& GetElementPtrInstr::getIndexes() {
+  return indexes;
+}
+AnsiString GetElementPtrInstr::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"ret\":";
+    _json += ret.toJSON();
+    _json += ",";
+    _json += "\"ptr\":";
+    _json += ptr.toJSON();
+    _json += ",";
+    _json += "\"indexes\":";
+    _json += indexes.toJSON();
+  _json += "}";
+  return _json.get();
+}
+GetElementPtrInstr GetElementPtrInstr::fromJSON(AnsiString s) {
+  AnsiString arr[3];
+  int ix=1;
+  for (int i=0;i<3;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("GetElementPtrInstr::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<3) {
+          if (ix-start-1<=0)
+            throw Exception("GetElementPtrInstr::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return GetElementPtrInstr(Register::fromJSON(arr[0]), Register::fromJSON(arr[1]), RegisterArray::fromJSON(arr[2]));
+}
+GetElementPtrInstr::~GetElementPtrInstr() {
+}
+//----------------------------------
+
 //------------- Instr ---------------
 const int Instr::_TypeBinaryOperationInstr = 0;
 const int Instr::_TypeCallInstr = 1;
@@ -1073,6 +1536,11 @@ const int Instr::_TypeReturnInstr = 3;
 const int Instr::_TypeBrInstr = 4;
 const int Instr::_TypeBrIfInstr = 5;
 const int Instr::_TypePrintInstr = 6;
+const int Instr::_TypeCommentInstr = 7;
+const int Instr::_TypeAllocaInstr = 8;
+const int Instr::_TypeLoadInstr = 9;
+const int Instr::_TypeGetElementPtrInstr = 10;
+const int Instr::_TypeStoreInstr = 11;
 void Instr::init(int type, void* ptr) {
   if (type==_TypeBinaryOperationInstr) {
     _type = type;
@@ -1095,6 +1563,21 @@ void Instr::init(int type, void* ptr) {
   } else if (type==_TypePrintInstr) {
     _type = type;
     _ptr = new Register(*(Register*) ptr);
+  } else if (type==_TypeCommentInstr) {
+    _type = type;
+    _ptr = new AnsiString(*(AnsiString*) ptr);
+  } else if (type==_TypeAllocaInstr) {
+    _type = type;
+    _ptr = new AllocaInstr(*(AllocaInstr*) ptr);
+  } else if (type==_TypeLoadInstr) {
+    _type = type;
+    _ptr = new LoadInstr(*(LoadInstr*) ptr);
+  } else if (type==_TypeGetElementPtrInstr) {
+    _type = type;
+    _ptr = new GetElementPtrInstr(*(GetElementPtrInstr*) ptr);
+  } else if (type==_TypeStoreInstr) {
+    _type = type;
+    _ptr = new StoreInstr(*(StoreInstr*) ptr);
   }
 }
 void Instr::clean() {
@@ -1125,6 +1608,26 @@ void Instr::clean() {
   } else if (_type==_TypePrintInstr) {
     _type = -1;
     delete (Register*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeCommentInstr) {
+    _type = -1;
+    delete (AnsiString*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeAllocaInstr) {
+    _type = -1;
+    delete (AllocaInstr*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeLoadInstr) {
+    _type = -1;
+    delete (LoadInstr*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeGetElementPtrInstr) {
+    _type = -1;
+    delete (GetElementPtrInstr*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeStoreInstr) {
+    _type = -1;
+    delete (StoreInstr*) _ptr;
     _ptr = 0;
   }
 }
@@ -1158,6 +1661,21 @@ bool Instr::isBrIfInstr() const {
 }
 bool Instr::isPrintInstr() const {
   return _type==_TypePrintInstr;
+}
+bool Instr::isCommentInstr() const {
+  return _type==_TypeCommentInstr;
+}
+bool Instr::isAllocaInstr() const {
+  return _type==_TypeAllocaInstr;
+}
+bool Instr::isLoadInstr() const {
+  return _type==_TypeLoadInstr;
+}
+bool Instr::isGetElementPtrInstr() const {
+  return _type==_TypeGetElementPtrInstr;
+}
+bool Instr::isStoreInstr() const {
+  return _type==_TypeStoreInstr;
 }
 const BinaryOperation& Instr::asBinaryOperationInstr() const {
   if (_type!=_TypeBinaryOperationInstr)
@@ -1229,6 +1747,56 @@ Register& Instr::asPrintInstr() {
     throw Exception("Instr::asPrintInstr");
   return *(Register*) _ptr;
 }
+const AnsiString& Instr::asCommentInstr() const {
+  if (_type!=_TypeCommentInstr)
+    throw Exception("Instr::asCommentInstr");
+  return *(AnsiString*) _ptr;
+}
+AnsiString& Instr::asCommentInstr() {
+  if (_type!=_TypeCommentInstr)
+    throw Exception("Instr::asCommentInstr");
+  return *(AnsiString*) _ptr;
+}
+const AllocaInstr& Instr::asAllocaInstr() const {
+  if (_type!=_TypeAllocaInstr)
+    throw Exception("Instr::asAllocaInstr");
+  return *(AllocaInstr*) _ptr;
+}
+AllocaInstr& Instr::asAllocaInstr() {
+  if (_type!=_TypeAllocaInstr)
+    throw Exception("Instr::asAllocaInstr");
+  return *(AllocaInstr*) _ptr;
+}
+const LoadInstr& Instr::asLoadInstr() const {
+  if (_type!=_TypeLoadInstr)
+    throw Exception("Instr::asLoadInstr");
+  return *(LoadInstr*) _ptr;
+}
+LoadInstr& Instr::asLoadInstr() {
+  if (_type!=_TypeLoadInstr)
+    throw Exception("Instr::asLoadInstr");
+  return *(LoadInstr*) _ptr;
+}
+const GetElementPtrInstr& Instr::asGetElementPtrInstr() const {
+  if (_type!=_TypeGetElementPtrInstr)
+    throw Exception("Instr::asGetElementPtrInstr");
+  return *(GetElementPtrInstr*) _ptr;
+}
+GetElementPtrInstr& Instr::asGetElementPtrInstr() {
+  if (_type!=_TypeGetElementPtrInstr)
+    throw Exception("Instr::asGetElementPtrInstr");
+  return *(GetElementPtrInstr*) _ptr;
+}
+const StoreInstr& Instr::asStoreInstr() const {
+  if (_type!=_TypeStoreInstr)
+    throw Exception("Instr::asStoreInstr");
+  return *(StoreInstr*) _ptr;
+}
+StoreInstr& Instr::asStoreInstr() {
+  if (_type!=_TypeStoreInstr)
+    throw Exception("Instr::asStoreInstr");
+  return *(StoreInstr*) _ptr;
+}
 
 AnsiString Instr::toJSON() const {
   StringBuffer _json;
@@ -1247,6 +1815,16 @@ AnsiString Instr::toJSON() const {
     _json += ((BrIfInstr*) _ptr)->toJSON();
     else if (_type==6)
     _json += ((Register*) _ptr)->toJSON();
+    else if (_type==7)
+    _json += "\"" + JSONEscape::encode(*((AnsiString*) _ptr)) + "\"";
+    else if (_type==8)
+    _json += ((AllocaInstr*) _ptr)->toJSON();
+    else if (_type==9)
+    _json += ((LoadInstr*) _ptr)->toJSON();
+    else if (_type==10)
+    _json += ((GetElementPtrInstr*) _ptr)->toJSON();
+    else if (_type==11)
+    _json += ((StoreInstr*) _ptr)->toJSON();
     else
       throw Exception("Instr::toJSON(" + AnsiString(_type) + ")");
     _json += "}";
@@ -1293,6 +1871,31 @@ Instr Instr::fromJSON(AnsiString s) {
       throw Exception("Instr::fromJSON");
     s = s.SubString(ix+10+1, s.Length()-ix-10-1);
     return Instr::createPrintInstr(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("7")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createCommentInstr((s.Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(s.SubString(2, s.Length()-2))));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("8")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createAllocaInstr(AllocaInstr::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("9")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Instr::createLoadInstr(LoadInstr::fromJSON(s));
+  } else if (s.Length()>ix+1+2 && s.SubString(ix+1, 2)==("10")) {
+    if (s.Length()-ix-10-2<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+2, s.Length()-ix-10-2);
+    return Instr::createGetElementPtrInstr(GetElementPtrInstr::fromJSON(s));
+  } else if (s.Length()>ix+1+2 && s.SubString(ix+1, 2)==("11")) {
+    if (s.Length()-ix-10-2<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+10+2, s.Length()-ix-10-2);
+    return Instr::createStoreInstr(StoreInstr::fromJSON(s));
   }
   AnsiString variantName = "";
   ix = 1;
@@ -1336,6 +1939,31 @@ Instr Instr::fromJSON(AnsiString s) {
       throw Exception("Instr::fromJSON");
     s = s.SubString(ix+1, s.Length()-ix-1);
     return Instr::createPrintInstr(Register::fromJSON(s));
+  } else if (variantName==("commentInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createCommentInstr((s.Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(s.SubString(2, s.Length()-2))));
+  } else if (variantName==("allocaInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createAllocaInstr(AllocaInstr::fromJSON(s));
+  } else if (variantName==("loadInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createLoadInstr(LoadInstr::fromJSON(s));
+  } else if (variantName==("getElementPtrInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createGetElementPtrInstr(GetElementPtrInstr::fromJSON(s));
+  } else if (variantName==("storeInstr")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Instr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Instr::createStoreInstr(StoreInstr::fromJSON(s));
   } else 
     throw Exception("Instr::fromJSON");
 }
@@ -1383,6 +2011,36 @@ Instr Instr::createPrintInstr(const Register& _param) {
   Instr _value;
   _value._type = _TypePrintInstr;
   _value._ptr = new Register(_param);
+  return _value;
+}
+Instr Instr::createCommentInstr(const AnsiString& _param) {
+  Instr _value;
+  _value._type = _TypeCommentInstr;
+  _value._ptr = new AnsiString(_param);
+  return _value;
+}
+Instr Instr::createAllocaInstr(const AllocaInstr& _param) {
+  Instr _value;
+  _value._type = _TypeAllocaInstr;
+  _value._ptr = new AllocaInstr(_param);
+  return _value;
+}
+Instr Instr::createLoadInstr(const LoadInstr& _param) {
+  Instr _value;
+  _value._type = _TypeLoadInstr;
+  _value._ptr = new LoadInstr(_param);
+  return _value;
+}
+Instr Instr::createGetElementPtrInstr(const GetElementPtrInstr& _param) {
+  Instr _value;
+  _value._type = _TypeGetElementPtrInstr;
+  _value._ptr = new GetElementPtrInstr(_param);
+  return _value;
+}
+Instr Instr::createStoreInstr(const StoreInstr& _param) {
+  Instr _value;
+  _value._type = _TypeStoreInstr;
+  _value._ptr = new StoreInstr(_param);
   return _value;
 }
 
@@ -1895,10 +2553,10 @@ LLVMFunction::~LLVMFunction() {
 }
 //----------------------------------
 
-//------------- LLVMProgram ---------------
-LLVMProgram::LLVMProgram() {
+//------------- LLVMFunctionArray ---------------
+LLVMFunctionArray::LLVMFunctionArray() {
 }
-AnsiString LLVMProgram::toJSON() const {
+AnsiString LLVMFunctionArray::toJSON() const {
   StringBuffer _json;
   _json += "[";
   for (int _i=0;_i<Size();_i++) {
@@ -1908,14 +2566,14 @@ AnsiString LLVMProgram::toJSON() const {
     _json += "]";
     return _json.get();
 }
-LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
-  LLVMProgram arr = LLVMProgram();
+LLVMFunctionArray LLVMFunctionArray::fromJSON(AnsiString s) {
+  LLVMFunctionArray arr = LLVMFunctionArray();
   int ix=1;
   while(ix <= s.Length() && s[ix]!='[')
     ix++;
   ix++;
   if (ix>s.Length()) 
-    throw Exception("LLVMProgram::fromJSON");
+    throw Exception("LLVMFunctionArray::fromJSON");
   while (ix<=s.Length()) {
     int start = ix;
     bool inString = false;
@@ -1937,7 +2595,7 @@ LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
         if (start==ix)
           return arr;
         if (ix-start<=0)
-          throw Exception("LLVMProgram::fromJSON");
+          throw Exception("LLVMFunctionArray::fromJSON");
         AnsiString tmp = s.SubString(start, ix-start);
         arr.Insert(LLVMFunction::fromJSON(tmp));
         ix++;
@@ -1947,6 +2605,74 @@ LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
     }
   }
   return arr;
+}
+LLVMFunctionArray::~LLVMFunctionArray() {
+}
+//----------------------------------
+
+//------------- LLVMProgram ---------------
+LLVMProgram::LLVMProgram(const LLVMFunctionArray& _functions, const StringArray& _strings) : functions(_functions), strings(_strings) {
+}
+const LLVMFunctionArray& LLVMProgram::getFunctions() const {
+  return functions;
+}
+LLVMFunctionArray& LLVMProgram::getFunctions() {
+  return functions;
+}
+const StringArray& LLVMProgram::getStrings() const {
+  return strings;
+}
+StringArray& LLVMProgram::getStrings() {
+  return strings;
+}
+AnsiString LLVMProgram::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"functions\":";
+    _json += functions.toJSON();
+    _json += ",";
+    _json += "\"strings\":";
+    _json += strings.toJSON();
+  _json += "}";
+  return _json.get();
+}
+LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("LLVMProgram::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("LLVMProgram::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return LLVMProgram(LLVMFunctionArray::fromJSON(arr[0]), StringArray::fromJSON(arr[1]));
 }
 LLVMProgram::~LLVMProgram() {
 }

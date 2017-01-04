@@ -25,6 +25,7 @@ void CodeBuilder::visitProg(Prog *prog)
 
 void CodeBuilder::visitFnDef(FnDef *fndef)
 {
+  BuilderEnviroment prev = enviroment;
   /*
   * Budujemy obiekt 
   *
@@ -49,10 +50,16 @@ void CodeBuilder::visitFnDef(FnDef *fndef)
   LLVMFunctionArgumentArray fArgs = LLVMFunctionArgumentArray();
   for (ListArg::iterator i = fndef->listarg_->begin() ; i != fndef->listarg_->end() ; ++i)
     if(Ar *arg = dynamic_cast<Ar*>(*i)) {
-      RegisterKind rk = getRegisterKindFromLatteType(arg->lattetype_);
-      Register r = getNextRegister(rk);
-      updateEnviroment(arg->ident_, Object::createBasic(BasicObject::createInt(r)));
-      fArgs.Insert(LLVMFunctionArgument(r, arg->ident_));
+      Object o = getNextObjectByLatteType(arg->lattetype_);
+      updateEnviroment(arg->ident_, o);
+      if(o.isBasic() && o.asBasic().isInt())
+        fArgs.Insert(LLVMFunctionArgument(o.asBasic().asInt(), arg->ident_));
+      if(o.isBasic() && o.asBasic().isBool())
+        fArgs.Insert(LLVMFunctionArgument(o.asBasic().asBool(), arg->ident_));
+      if(o.isBasic() && o.asBasic().isString())
+        fArgs.Insert(LLVMFunctionArgument(o.asBasic().asString(), arg->ident_));
+      if(o.isArray())
+        fArgs.Insert(LLVMFunctionArgument(o.asArray().getPointer(), arg->ident_));
     }
     else
       throw Exception("[CodeBuilder::visitFnDef] Unknown arg kind.");
@@ -65,9 +72,10 @@ void CodeBuilder::visitFnDef(FnDef *fndef)
   updateEnviroment(fName, Object::createFunction(FunctionObject(fRetType)));
   fndef->block_->accept(this);
   LLVMBlockArray fBlocks = actBlocks;
-  program.Insert(LLVMFunction(fName, fRetType, fArgs, fBlocks));
+  program.getFunctions().Insert(LLVMFunction(fName, fRetType, fArgs, fBlocks));
 
-
+  enviroment = prev;
+  updateEnviroment(fName, Object::createFunction(FunctionObject(fRetType)));
 }
 
 void CodeBuilder::visitAr(Ar *ar)
@@ -79,9 +87,7 @@ void CodeBuilder::visitAr(Ar *ar)
 void CodeBuilder::visitBlk(Blk *blk)
 {
   BuilderEnviroment env = enviroment;
-  actNesting++;
   blk->liststmt_->accept(this);
-  actNesting--;
   enviroment = env;
 }
 
@@ -96,34 +102,51 @@ void CodeBuilder::visitBStmt(BStmt *bstmt)
 
 void CodeBuilder::visitDecl(Decl *decl)
 {
-  decl->lattetype_->accept(this);
   for (ListItem::iterator i = decl->listitem_->begin() ; i != decl->listitem_->end() ; ++i)
     if(Init *item = dynamic_cast<Init*>(*i)) {
       item->expr_->accept(this);
-      updateEnviroment(item->ident_, Object::createBasic(BasicObject::createInt(registerData.getLastRegister())));
-    } 
-      
-
-  //TODO -> updateEnviroment();
-
-
-
-  /*decl->lattetype_->accept(this);
-  Type declType = actType;
-  for (ListItem::iterator i = decl->listitem_->begin() ; i != decl->listitem_->end() ; ++i)
-  {
-    if(Init *item = dynamic_cast<Init*>(*i)) {
-      item->expr_->accept(this);
-      if(!Manager::cmp(declType, actType)) {
-        //addError(item->expr_->line_number, "Bad init expression type");
-      } else 
-        Manager::addIdent(item->ident_, declType, actNesting, enviroment, store);
+      if(IntType *type = dynamic_cast<IntType*>(decl->lattetype_)) {
+        updateEnviroment(item->ident_, Object::createBasic(BasicObject::createInt(registerData.getLastRegister())));
+      } else if(BoolType *type = dynamic_cast<BoolType*>(decl->lattetype_)) {
+        updateEnviroment(item->ident_, Object::createBasic(BasicObject::createBool(registerData.getLastRegister())));
+      } else if(StrType *type = dynamic_cast<StrType*>(decl->lattetype_)) {
+        updateEnviroment(item->ident_, Object::createBasic(BasicObject::createString(registerData.getLastRegister())));
+      } else if(ArrType *type = dynamic_cast<ArrType*>(decl->lattetype_)) {
+        Register outReg = getNextRegister(getRegisterKindFromLatteType(decl->lattetype_));
+        addInstr(Instr::createAllocaInstr(AllocaInstr(AllocaInstrCount::createMultiple(registerData.getLastRegister()), outReg)));
+        updateEnviroment(item->ident_, Object::createArray(ArrayObject(getRegisterKindFromLatteType(decl->lattetype_), outReg)));
+        registerData.getLastRegister() = outReg;
+      } else  
+        throw Exception("[CodeBuilder::visitDecl] Init exp type not supported");
     } else if(NoInit *item = dynamic_cast<NoInit*>(*i)) {
-      Manager::addIdent(item->ident_, declType, actNesting, enviroment, store);
-    } else {
-      throw Exception("[CodeBuilder::visitDecl] casting error");
+      if(IntType *type = dynamic_cast<IntType*>(decl->lattetype_)) {
+        BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(0);
+        BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
+        Register outReg = getNextRegister(RegisterKind::createValueI32());
+        BinaryOperation bo = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, BinaryOperator::createAdd());
+        Instr instr = Instr::createBinaryOperationInstr(bo);
+        addInstr(instr);
+        updateEnviroment(item->ident_, Object::createBasic(BasicObject::createInt(outReg)));
+        registerData.getLastRegister() = outReg;
+      } else if(BoolType *type = dynamic_cast<BoolType*>(decl->lattetype_)) {
+        BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(0);
+        BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
+        Register outReg = getNextRegister(RegisterKind::createValueI1());
+        BinaryOperation bo = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, BinaryOperator::createAdd());
+        Instr instr = Instr::createBinaryOperationInstr(bo);
+        addInstr(instr);
+        updateEnviroment(item->ident_, Object::createBasic(BasicObject::createBool(outReg)));
+      } else if(ArrType *type = dynamic_cast<ArrType*>(decl->lattetype_)) {
+        Register outReg = getNextRegister(getRegisterKindFromLatteType(decl->lattetype_));
+        addInstr(Instr::createAllocaInstr(AllocaInstr(AllocaInstrCount::createSingle(), outReg)));
+        updateEnviroment(item->ident_, Object::createArray(ArrayObject(getRegisterKindFromLatteType(decl->lattetype_), outReg)));
+        registerData.getLastRegister() = outReg;
+      } else  if(StrType *type = dynamic_cast<StrType*>(decl->lattetype_)) {
+        //TODO
+      } else 
+        throw Exception("[CodeBuilder::visitDecl] Init exp type not supported");
+    
     }
-  }*/
 }
 
 void CodeBuilder::visitAss(Ass *ass)
@@ -135,17 +158,29 @@ void CodeBuilder::visitAss(Ass *ass)
 void CodeBuilder::visitIncr(Incr *incr)
 {
   visitIdent(incr->ident_);
-  //if(Manager::txt(actType)) {
-    //addError(incr->line_number, "Bad expression type");
-  //}
+  BinaryOperationArgument lArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber("1");
+  RegisterKind regKind = getBinaryOperationRegisterKind(lArg.asRegister(), lArg.asRegister()); //todo generalnie ta funkcja do wywalenia
+  Register outReg = getNextRegister(regKind);
+  registerData.getLastRegister() = outReg;
+  BinaryOperation bon = BinaryOperation(outReg, regKind, lArg, rArg, BinaryOperator::createAdd());
+  Instr instr = Instr::createBinaryOperationInstr(bon);
+  addInstr(instr);
+  updateStore(incr->ident_, Object::createBasic(BasicObject::createInt(outReg)));
 }
 
 void CodeBuilder::visitDecr(Decr *decr)
 {
   visitIdent(decr->ident_);
-  //if(Manager::txt(actType)) {
-    //addError(decr->line_number, "Bad expression type");
-  //}
+  BinaryOperationArgument lArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber("1");
+  RegisterKind regKind = getBinaryOperationRegisterKind(lArg.asRegister(), lArg.asRegister()); //todo generalnie ta funkcja do wywalenia
+  Register outReg = getNextRegister(regKind);
+  registerData.getLastRegister() = outReg;
+  BinaryOperation bon = BinaryOperation(outReg, regKind, lArg, rArg, BinaryOperator::createSub());
+  Instr instr = Instr::createBinaryOperationInstr(bon);
+  addInstr(instr);
+  updateStore(decr->ident_, Object::createBasic(BasicObject::createInt(outReg)));
 }
 
 void CodeBuilder::visitRet(Ret *ret)
@@ -156,7 +191,7 @@ void CodeBuilder::visitRet(Ret *ret)
 
 void CodeBuilder::visitVRet(VRet *vret)
 {
-  actRet = Type::createBasic(BasicType::createVoid());
+  //TODO
 }
 
 void CodeBuilder::visitCond(Cond *cond)
@@ -178,6 +213,16 @@ void CodeBuilder::visitCond(Cond *cond)
   cond->expr_->accept(this);
   addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, wendblock)));
   
+  DynSet<Object> objs;
+  DynSet<AnsiString> idents;
+  for(int i=0;i<enviroment.Size();i++) {
+    Object o = getObjectById(enviroment[i].getStoreId());
+    if(o.isBasic()) {
+      objs.Insert(o);
+      idents.Insert(enviroment[i].getIdent());
+    }
+  }
+
   BuilderEnviroment e = enviroment;
   Store s = store;
 
@@ -189,22 +234,31 @@ void CodeBuilder::visitCond(Cond *cond)
   addInstr(Instr::createBrInstr(BrInstr(wendblock)));
 
   initBlock(wendblock);
-  for(int i=0;i<e.Size();i++) {
-    if(getObjectByIdent(e[i].getIdent()).isBasic()) {
-      Register r = getNextRegister(RegisterKind::createValueI32());
-      PhiCases phiCases;
-      phiCases.Insert(PhiCase(getRegisterByIdent(e[i].getIdent()), actBlocks[actBlocks.Size()-3].getName()));
-      addInstr(Instr::createPhiInstr(PhiInstr(e[i].getIdent(), r, phiCases)));
-      updateEnviroment(e[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+  for(int i=0;i<enviroment.Size();i++) {
+    Object o = getObjectById(enviroment[i].getStoreId());
+    if(o.isBasic()) {
+      if(o.asBasic().isInt()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asInt(), wbodyblock, wendblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+      } else if(o.asBasic().isBool()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asBool(), wbodyblock, wendblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createBool(r)));
+      } else if(o.asBasic().isString()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asString(), wbodyblock, wendblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createString(r)));
+      }
     }
   }
-  for(int i=0;i<enviroment.Size();i++) {
-    if(getObjectByIdent(enviroment[i].getIdent()).isBasic()) {
-      Register r = getNextRegister(RegisterKind::createValueI32());
-      PhiCases phiCases;
-      phiCases.Insert(PhiCase(getRegisterByIdent(enviroment[i].getIdent()), actBlocks[actBlocks.Size()-2].getName()));
-      addInstr(Instr::createPhiInstr(PhiInstr(enviroment[i].getIdent(), r, phiCases)));
-      updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+  for(int i=0;i<objs.Size();i++) {
+    Object o = objs[i];
+    if(o.isBasic()) {
+      if(o.asBasic().isInt()) {
+        addPhiCase(idents[i], o.asBasic().asInt(), wcondblock, wendblock);
+      } else if(o.asBasic().isBool()) {
+        addPhiCase(idents[i], o.asBasic().asBool(), wcondblock, wendblock);
+      } else if(o.asBasic().isString()) {
+        addPhiCase(idents[i], o.asBasic().asString(), wcondblock, wcondblock);
+      }
     }
   }
   enviroment = e;
@@ -228,9 +282,11 @@ void CodeBuilder::visitCondElse(CondElse *condelse)
   /*
   * Generujemy blok warunku
   */
+
   initBlock(wcondblock);
   condelse->expr_->accept(this);
   addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, welseblock)));
+  
   BuilderEnviroment e = enviroment;
   Store s = store;
   /*
@@ -240,6 +296,18 @@ void CodeBuilder::visitCondElse(CondElse *condelse)
   condelse->stmt_1->accept(this);
   addInstr(Instr::createBrInstr(BrInstr(wendblock)));
 
+  DynSet<Object> objs;
+  DynSet<AnsiString> idents;
+  for(int i=0;i<enviroment.Size();i++) {
+    Object o = getObjectById(enviroment[i].getStoreId());
+    if(o.isBasic()) {
+      objs.Insert(o);
+      idents.Insert(enviroment[i].getIdent());
+    }
+  }
+
+  enviroment = e;
+  store = s;
   /*
   * Generujemy ciało if_else
   */
@@ -248,26 +316,33 @@ void CodeBuilder::visitCondElse(CondElse *condelse)
   addInstr(Instr::createBrInstr(BrInstr(wendblock)));
 
   initBlock(wendblock);
-  for(int i=0;i<e.Size();i++) {
-    if(getObjectByIdent(e[i].getIdent()).isBasic()) {
-      Register r = getNextRegister(RegisterKind::createValueI32());
-      PhiCases phiCases;
-      phiCases.Insert(PhiCase(getRegisterByIdent(e[i].getIdent()), actBlocks[actBlocks.Size()-3].getName()));
-      addInstr(Instr::createPhiInstr(PhiInstr(e[i].getIdent(), r, phiCases)));
-      updateEnviroment(e[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
-    }
-  }
   for(int i=0;i<enviroment.Size();i++) {
-    if(getObjectByIdent(enviroment[i].getIdent()).isBasic()) {
-      Register r = getNextRegister(RegisterKind::createValueI32());
-      PhiCases phiCases;
-      phiCases.Insert(PhiCase(getRegisterByIdent(enviroment[i].getIdent()), actBlocks[actBlocks.Size()-2].getName()));
-      addInstr(Instr::createPhiInstr(PhiInstr(enviroment[i].getIdent(), r, phiCases)));
-      updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+    Object o = getObjectById(enviroment[i].getStoreId());
+    if(o.isBasic()) {
+      if(o.asBasic().isInt()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asInt(), welseblock, wendblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+      } else if(o.asBasic().isBool()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asBool(), welseblock, wendblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createBool(r)));
+      } else if(o.asBasic().isString()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asString(), welseblock, wendblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createString(r)));
+      }
     }
   }
-  enviroment = e;
-  store = s;
+  for(int i=0;i<objs.Size();i++) {
+    Object o = objs[i];
+    if(o.isBasic()) {
+      if(o.asBasic().isInt()) {
+        addPhiCase(idents[i], o.asBasic().asInt(), wbodyblock, wendblock);
+      } else if(o.asBasic().isBool()) {
+        addPhiCase(idents[i], o.asBasic().asBool(), wbodyblock, wendblock);
+      } else if(o.asBasic().isString()) {
+        addPhiCase(idents[i], o.asBasic().asString(), wbodyblock, wcondblock);
+      }
+    }
+  }
 }
 
 void CodeBuilder::visitWhileStmnt(WhileStmnt *whilestmnt)
@@ -282,25 +357,29 @@ void CodeBuilder::visitWhileStmnt(WhileStmnt *whilestmnt)
 
   //skok do while_cond
   addInstr(Instr::createBrInstr(BrInstr(wcondblock)));
-  BuilderEnviroment e = enviroment;
-  Store s = store;
   /*
   * Generujemy blok warunku
   */
   initBlock(wcondblock);
-  for(int i=0;i<e.Size();i++) {
-    if(getObjectByIdent(e[i].getIdent()).isBasic()) {
-      Register r = getNextRegister(RegisterKind::createValueI32());
-      PhiCases phiCases;
-      phiCases.Insert(PhiCase(getRegisterByIdent(e[i].getIdent()), actBlocks[actBlocks.Size()-2].getName()));
-      addInstr(Instr::createPhiInstr(PhiInstr(e[i].getIdent(), r, phiCases)));
-      updateEnviroment(e[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+  for(int i=0;i<enviroment.Size();i++) {
+    Object o = getObjectById(enviroment[i].getStoreId());
+    if(o.isBasic()) {
+      if(o.asBasic().isInt()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asInt(), actBlocks[actBlocks.Size()-2].getName(), wcondblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createInt(r)));
+      } else if(o.asBasic().isBool()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asBool(), actBlocks[actBlocks.Size()-2].getName(), wcondblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createBool(r)));
+      } else if(o.asBasic().isString()) {
+        Register r = addPhiCase(enviroment[i].getIdent(), o.asBasic().asString(), actBlocks[actBlocks.Size()-2].getName(), wcondblock);
+        updateEnviroment(enviroment[i].getIdent(), Object::createBasic(BasicObject::createString(r)));
+      }
     }
   }
   whilestmnt->expr_->accept(this);
   addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, wendblock)));
-  e = enviroment;
-  s = store;
+  BuilderEnviroment e = enviroment;
+  Store s = store;
   /*
   * Generujemy ciało while
   */
@@ -308,8 +387,14 @@ void CodeBuilder::visitWhileStmnt(WhileStmnt *whilestmnt)
   whilestmnt->stmt_->accept(this);
   addInstr(Instr::createBrInstr(BrInstr(wcondblock)));
   for(int i=0;i<enviroment.Size();i++) {
-    if(getObjectByIdent(enviroment[i].getIdent()).isBasic())
-      addPhiCase(enviroment[i].getIdent(), getRegisterByIdent(enviroment[i].getIdent()), wbodyblock, wcondblock);
+    Object o = getObjectById(e[i].getStoreId());
+    if(o.isBasic())
+      if(o.asBasic().isInt())
+         addPhiCase(enviroment[i].getIdent(), o.asBasic().asInt(), wbodyblock, wcondblock);
+      else if(o.asBasic().isBool())
+         addPhiCase(enviroment[i].getIdent(), o.asBasic().asBool(), wbodyblock, wcondblock);
+      else if(o.asBasic().isString())
+         addPhiCase(enviroment[i].getIdent(), o.asBasic().asString(), wbodyblock, wcondblock);
   }
 
   initBlock(wendblock);
@@ -341,33 +426,32 @@ void CodeBuilder::visitInit(Init *init)
 
 void CodeBuilder::visitIntType(IntType *inttype)
 {
-  actType = Type::createBasic(BasicType::createInt());
+ 
 }
 
 void CodeBuilder::visitStrType(StrType *strtype)
 {
-  actType = Type::createBasic(BasicType::createString());
+  
 }
 
 void CodeBuilder::visitBoolType(BoolType *booltype)
 {
-  actType = Type::createBasic(BasicType::createBool());
+  
+}
+
+void CodeBuilder::visitArrType(ArrType *arrtype)
+{
+
 }
 
 void CodeBuilder::visitVoidType(VoidType *voidtype)
 {
-  actType = Type::createBasic(BasicType::createVoid());
+ 
 }
 
 void CodeBuilder::visitFun(Fun *fun)
 {
-  printf("VISIT FUN");
-  //TODO
-  //actType = Type::createFunction(FunctionType::createInt());
-  fun->lattetype_->accept(this);
-  Type retType = actType;
-  fun->listlattetype_->accept(this);
-  //??wtf
+
 }
 
 void CodeBuilder::visitEVar(EVar *evar)
@@ -382,12 +466,80 @@ void CodeBuilder::visitELitInt(ELitInt *elitint)
 
 void CodeBuilder::visitELitTrue(ELitTrue *elittrue)
 {
-   actType = Type::createBasic(BasicType::createBool());
+  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(1);
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
+  Register outReg = getNextRegister(RegisterKind::createValueI1());
+  BinaryOperation bo = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, BinaryOperator::createAdd());
+  Instr instr = Instr::createBinaryOperationInstr(bo);
+  addInstr(instr);
+  registerData.getLastRegister() = outReg;
 }
 
 void CodeBuilder::visitELitFalse(ELitFalse *elitfalse)
 {
-  actType = Type::createBasic(BasicType::createBool());
+  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(0);
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
+  Register outReg = getNextRegister(RegisterKind::createValueI1());
+  BinaryOperation bo = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, BinaryOperator::createAdd());
+  Instr instr = Instr::createBinaryOperationInstr(bo);
+  addInstr(instr);
+  registerData.getLastRegister() = outReg;
+}
+
+void CodeBuilder::visitEArr(EArr *earr) {
+  earr->expr_->accept(this);
+
+  RegisterArray arr;
+  arr.Insert(registerData.getLastRegister());
+
+  if(!getObjectByIdent(earr->ident_).isArray())
+    throw Exception(AnsiString("") + "[CodeBuilder::visitEArr] is not array " + earr->ident_ + " " + getObjectByIdent(earr->ident_).toJSON());
+  ArrayObject ao = getObjectByIdent(earr->ident_).asArray();
+
+  Register arrReg = ao.getPointer();
+  Register ptrReg = getNextRegister(arrReg.getKind());
+  Register outReg = getNextRegister(arrReg.getKind().asPtr());
+
+  GetElementPtrInstr ginstr(ptrReg, arrReg, arr);
+  addInstr(Instr::createGetElementPtrInstr(ginstr));
+  
+  LoadInstr linstr(outReg, ptrReg);
+  addInstr(Instr::createLoadInstr(linstr));
+
+  
+  registerData.getLastRegister() = outReg;
+
+}
+
+void CodeBuilder::visitArrAss(ArrAss *arrass) {
+  arrass->expr_1->accept(this);
+
+  RegisterArray arr;
+  arr.Insert(registerData.getLastRegister());
+
+  if(!getObjectByIdent(arrass->ident_).isArray())
+    throw Exception("[CodeBuilder::visitArrAss] is not array" + arrass->ident_);
+  ArrayObject ao = getObjectByIdent(arrass->ident_).asArray();
+
+  Register arrReg = ao.getPointer();
+  Register ptrReg = getNextRegister(arrReg.getKind());
+
+  GetElementPtrInstr ginstr(ptrReg, arrReg, arr);
+  addInstr(Instr::createGetElementPtrInstr(ginstr));
+  
+  arrass->expr_2->accept(this);
+
+  StoreInstr linstr(registerData.getLastRegister(), ptrReg);
+  addInstr(Instr::createStoreInstr(linstr));
+}
+
+void CodeBuilder::visitENewArr(ENewArr *enewarr)
+{
+  /* Code For ENewArr Goes Here */
+
+  enewarr->lattetype_->accept(this);
+  enewarr->expr_->accept(this);
+
 }
 
 void CodeBuilder::visitEApp(EApp *eapp)
@@ -416,17 +568,28 @@ void CodeBuilder::visitEString(EString *estring)
 void CodeBuilder::visitNeg(Neg *neg)
 {
   neg->expr_->accept(this);
-  //if(Manager::bsc(actType)) {
-    //addError(neg->expr_->line_number, "Bad expression type");
-  //}
+  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber("0");
+  BinaryOperationArgument rArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
+  RegisterKind regKind = getBinaryOperationRegisterKind(rArg.asRegister(), rArg.asRegister()); //todo generalnie ta funkcja do wywalenia
+  Register outReg = getNextRegister(regKind);
+  registerData.getLastRegister() = outReg;
+  BinaryOperation bon = BinaryOperation(outReg, regKind, lArg, rArg, BinaryOperator::createSub());
+  Instr instr = Instr::createBinaryOperationInstr(bon);
+  addInstr(instr);
 }
 
 void CodeBuilder::visitNott(Nott *nott)
 {
   nott->expr_->accept(this);
-  //if(Manager::bsc(actType)) {
-    //addError(nott->expr_->line_number, "Bad expression type");
-  //}
+  BinaryOperationArgument lArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
+  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber("1");
+  RegisterKind regKind = getBinaryOperationRegisterKind(lArg.asRegister(), lArg.asRegister()); //todo generalnie ta funkcja do wywalenia
+  Register outReg = getNextRegister(regKind);
+  registerData.getLastRegister() = outReg;
+  BinaryOperation bon = BinaryOperation(outReg, regKind, lArg, rArg, BinaryOperator::createSub());
+  Instr instr = Instr::createBinaryOperationInstr(bon);
+  addInstr(instr);
+
 }
 
 void CodeBuilder::visitEMul(EMul *emul)
@@ -441,10 +604,10 @@ void CodeBuilder::visitEMul(EMul *emul)
   if(Times *mulop = dynamic_cast<Times*>(emul->mulop_)) {
     bor = BinaryOperator::createMul();
   } else if(Mod *mulop = dynamic_cast<Mod*>(emul->mulop_)) {
-    //bor = BinaryOperator::createMod();
+    bor = BinaryOperator::createMod();
   } else 
     throw Exception("[CodeBuilder::visitEMul] Unknown emul->mulop_ kind.");
-  BinaryOperation bon = BinaryOperation(outReg, lArg, rArg, bor);
+  BinaryOperation bon = BinaryOperation(outReg, regKind, lArg, rArg, bor);
   Instr instr = Instr::createBinaryOperationInstr(bon);
   addInstr(instr);
   registerData.getLastRegister() = outReg;
@@ -452,24 +615,36 @@ void CodeBuilder::visitEMul(EMul *emul)
 
 void CodeBuilder::visitEAdd(EAdd *eadd)
 {
+  
   eadd->expr_1->accept(this);
   BinaryOperationArgument lArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
   eadd->expr_2->accept(this);
   BinaryOperationArgument rArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
   RegisterKind regKind = getBinaryOperationRegisterKind(lArg.asRegister(), rArg.asRegister());
   Register outReg = getNextRegister(regKind);
-  BinaryOperator bor = BinaryOperator::createDiv();
-  if(Plus *mulop = dynamic_cast<Plus*>(eadd->addop_)) {
-    bor = BinaryOperator::createAdd();
-  } else if(Minus *mulop = dynamic_cast<Minus*>(eadd->addop_)) {
-    bor = BinaryOperator::createSub();
-  } else 
-    throw Exception("[CodeBuilder::visitEAdd] Unknown eadd->addop_ kind.");
-  BinaryOperation bon = BinaryOperation(outReg, lArg, rArg, bor);
-  Instr instr = Instr::createBinaryOperationInstr(bon);
-  addInstr(instr);
-  registerData.getLastRegister() = outReg;
+  if(outReg.getKind().isPtr()) {
+    //string
+    Registers args;
+    args.Insert(lArg.asRegister());
+    args.Insert(rArg.asRegister());
+    Instr instr = Instr::createCallInstr(CallInstr(CallInstrRet::createObj(outReg), "concatenate", args));
+    addInstr(instr);
+    registerData.getLastRegister() = outReg;
+  } else {
+    BinaryOperator bor = BinaryOperator::createDiv();
+    if(Plus *addop = dynamic_cast<Plus*>(eadd->addop_)) {
+      bor = BinaryOperator::createAdd();
+    } else if(Minus *addop = dynamic_cast<Minus*>(eadd->addop_)) {
+      bor = BinaryOperator::createSub();
+    } else 
+      throw Exception("[CodeBuilder::visitEAdd] Unknown eadd->addop_ kind.");
+    BinaryOperation bon = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, bor);
+    Instr instr = Instr::createBinaryOperationInstr(bon);
+    addInstr(instr);
+    registerData.getLastRegister() = outReg;
+  }
 }
+
 
 void CodeBuilder::visitERel(ERel *erel)
 {
@@ -477,8 +652,7 @@ void CodeBuilder::visitERel(ERel *erel)
   BinaryOperationArgument lArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
   erel->expr_2->accept(this);
   BinaryOperationArgument rArg = BinaryOperationArgument::createRegister(registerData.getLastRegister());
-  RegisterKind regKind = getBinaryOperationRegisterKind(lArg.asRegister(), rArg.asRegister());
-  Register outReg = getNextRegister(regKind);
+  Register outReg = getNextRegister(RegisterKind::createValueI1());
   BinaryOperator bor = BinaryOperator::createLth();
   if(LE *relop = dynamic_cast<LE*>(erel->relop_)) {
     bor = BinaryOperator::createLe();
@@ -494,7 +668,7 @@ void CodeBuilder::visitERel(ERel *erel)
     bor = BinaryOperator::createNe();
   } else 
     throw Exception("[CodeBuilder::visitEAdd] Unknown erel->relop_ kind.");
-  BinaryOperation bon = BinaryOperation(outReg, lArg, rArg, bor);
+  BinaryOperation bon = BinaryOperation(outReg, registerData.getLastRegister().getKind(), lArg, rArg, bor);
   Instr instr = Instr::createBinaryOperationInstr(bon);
   addInstr(instr);
   registerData.getLastRegister() = outReg;
@@ -502,24 +676,36 @@ void CodeBuilder::visitERel(ERel *erel)
 
 void CodeBuilder::visitEAnd(EAnd *eand)
 {
+  AnsiString actBlock = actBlocks[actBlocks.Size()-1].getName();
+  AnsiString ifandcond2 = getNextBlockNameByPrefix("if_and_cond2");
+  AnsiString ifandend = getNextBlockNameByPrefix("if_and_end");
   eand->expr_1->accept(this);
-  Type exp1 = actType;
+  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), ifandcond2, ifandend)));
+  Register r1 = registerData.getLastRegister();
+  initBlock(ifandcond2);
   eand->expr_2->accept(this);
-  Type exp2 = actType;
-  //if(!Manager::bsc(exp1) || !Manager::bsc(exp2)) {
-    //addError(eand->expr_2->line_number, "Bad rel expression arg type");
-  //}
+  addInstr(Instr::createBrInstr(BrInstr(ifandend)));
+  Register r2 = registerData.getLastRegister();
+  initBlock(ifandend);
+  addPhiCase(ifandend, r1, actBlock, ifandend);
+  registerData.getLastRegister() = addPhiCase(ifandend, r2, ifandcond2, ifandend);
 }
 
 void CodeBuilder::visitEOr(EOr *eor)
 {
+  AnsiString actBlock = actBlocks[actBlocks.Size()-1].getName();
+  AnsiString iforcond2 = getNextBlockNameByPrefix("if_or_cond2");
+  AnsiString iforend = getNextBlockNameByPrefix("if_and_end");
   eor->expr_1->accept(this);
-  Type exp1 = actType;
+  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), iforend, iforcond2)));
+  Register r1 = registerData.getLastRegister();
+  initBlock(iforcond2);
   eor->expr_2->accept(this);
-  Type exp2 = actType;
-  //if(!Manager::bsc(exp1) || !Manager::bsc(exp2)) {
-    //addError(eor->expr_2->line_number, "Bad rel expression arg type");
-  //}
+  addInstr(Instr::createBrInstr(BrInstr(iforend)));
+  Register r2 = registerData.getLastRegister();
+  initBlock(iforend);
+  addPhiCase(iforend, r1, actBlock, iforend);
+  registerData.getLastRegister() = addPhiCase(iforend, r2, iforcond2, iforend);
 }
 
 
@@ -632,7 +818,7 @@ void CodeBuilder::visitInteger(Integer x)
   BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(x);
   BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
   Register outReg = getNextRegister(RegisterKind::createValueI32());
-  BinaryOperation bo = BinaryOperation(outReg, lArg, rArg, BinaryOperator::createAdd());
+  BinaryOperation bo = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, BinaryOperator::createAdd());
   Instr instr = Instr::createBinaryOperationInstr(bo);
   addInstr(instr);
   registerData.getLastRegister() = outReg;
@@ -640,35 +826,24 @@ void CodeBuilder::visitInteger(Integer x)
 
 void CodeBuilder::visitChar(Char x)
 {
-  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(x);
-  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
-  Register outReg = getNextRegister(RegisterKind::createValueI8());
-  BinaryOperation bo = BinaryOperation(outReg, lArg, rArg, BinaryOperator::createAdd());
-  Instr instr = Instr::createBinaryOperationInstr(bo);
-  addInstr(instr);
-  registerData.getLastRegister() = outReg;
+
 }
 
 void CodeBuilder::visitDouble(Double x)
 {
-  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(x);
-  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
-  Register outReg = getNextRegister(RegisterKind::createValueDouble());
-  BinaryOperation bo = BinaryOperation(outReg, lArg, rArg, BinaryOperator::createAdd());
-  Instr instr = Instr::createBinaryOperationInstr(bo);
-  addInstr(instr);
-  registerData.getLastRegister() = outReg;
+;
 }
 
 void CodeBuilder::visitString(String x)
 {
-  //TODO
-  //actType = Type::createBasic(BasicType::createString());
+  program.getStrings().Insert(x);
+  Register outReg = getNextRegister(RegisterKind::createPtr(RegisterKind::createPtr(RegisterKind::createValueI8())));
+  addInstr(Instr::createAllocaInstr(AllocaInstr(AllocaInstrCount::createSingle(), outReg)));
+  registerData.getLastRegister() = outReg;
 }
 
 void CodeBuilder::visitIdent(Ident x)
 {
-  fprintf(stderr, "VisitIdent %s reg %d\n", x.c_str(), getRegisterByIdent(x).getId());
   registerData.getLastRegister() = getRegisterByIdent(x);
 }
 
@@ -686,13 +861,13 @@ RegisterKind CodeBuilder::getBinaryOperationRegisterKind(const Register& r1, con
   * Funkcja sprawdza typy i ewentualnie decyduje o rzutowaniu
   */
 
-  if(r1.getKind().isValueI32()) {
+  /*if(r1.getKind().isValueI32()) {
     if(r2.getKind().isValueI32()) {
       return RegisterKind::createValueI32();
     } else 
     return RegisterKind::createValueDouble();
-  }
-  RegisterKind::createValueDouble();
+  }*/
+  return r1.getKind();
 }
 
 RegisterKind CodeBuilder::getRegisterKindFromLatteType(const LatteType* type) {
@@ -702,6 +877,8 @@ RegisterKind CodeBuilder::getRegisterKindFromLatteType(const LatteType* type) {
     return RegisterKind::createPtr(RegisterKind::createValueI8());
   if(const BoolType *arg = dynamic_cast<const BoolType*>(type))
     return RegisterKind::createValueI1();
+  if(const ArrType *arg = dynamic_cast<const ArrType*>(type))
+    return RegisterKind::createPtr(getRegisterKindFromLatteType(arg->lattetype_));
   throw Exception("[getRegisterKindFromType] Unknown type.");
 }
 
@@ -713,13 +890,8 @@ void CodeBuilder::initBlock(const AnsiString& name) {
 }
 
 AnsiString CodeBuilder::getNextBlockNameByPrefix(const AnsiString& name) {
-  int index = 0;
-  for(int i=0;i<actBlocks.Size();i++) {
-    const AnsiString bname = actBlocks[i].getName();
-    if(bname.Length() > name.Length() && bname.SubString(1, name.Length()) == name)
-      index++;
-  }
-  AnsiString bname = name+"_"+AnsiString(index);
+  static int index = 0;
+  AnsiString bname = name+"_"+AnsiString(index++);
   return bname;
 }
 
@@ -761,7 +933,7 @@ void CodeBuilder::updateStore(const AnsiString& ident, const Object& object) {
   updateEnviroment(ident, object);
 }
 
-void CodeBuilder::addPhiCase(const AnsiString& ident, const Register& reg, const AnsiString& fromBlock, const AnsiString& toBlock) {
+Register CodeBuilder::addPhiCase(const AnsiString& ident, const Register& reg, const AnsiString& fromBlock, const AnsiString& toBlock) {
   /*
   * Funcja dodaje kolejne opcje pochodzenia zmiennych
   * Wykorzystywana do odpowiedniego generowanie operacji phi na początku bloku
@@ -772,10 +944,15 @@ void CodeBuilder::addPhiCase(const AnsiString& ident, const Register& reg, const
         if(actBlocks[i].getBody()[j].isPhiInstr()) {
           if(actBlocks[i].getBody()[j].asPhiInstr().getIdent()==ident) {
             actBlocks[i].getBody()[j].asPhiInstr().getCaseses().Insert(PhiCase(reg, fromBlock));
+            return actBlocks[i].getBody()[j].asPhiInstr().getRet();
           }
         }
       }
-      return;
+      Register r = getNextRegister(reg.getKind());
+      PhiCases phiCases;
+      phiCases.Insert(PhiCase(reg, fromBlock));
+      actBlocks[i].getBody().Insert(Instr::createPhiInstr(PhiInstr(ident, r, phiCases)));
+      return r;
     }
 }
 
@@ -788,14 +965,59 @@ Object CodeBuilder::getObjectByIdent(const AnsiString& ident) {
   throw Exception("[CodeBuilder::getObjectByIdent] Ident "+ident+" not found.");
 }
 
-Register CodeBuilder::getRegisterByIdent(const AnsiString& ident) {
-  Object o = getObjectByIdent(ident);
+Register CodeBuilder::getRegisterByObject(const Object& o) {
   if(o.isBasic()) {
     BasicObject bo = o.asBasic();
     if(bo.isInt()) {
       return bo.asInt();
+    } else if(bo.isBool()) {
+      return bo.asBool();
+    } else if(bo.isString()) {
+      return bo.asString();
+    } else
+      throw Exception("[CodeBuilder::getRegisterByObject] Unsupported basic object.");
+  } if(o.isArray()) {
+    return o.asArray().getPointer();
+  } else 
+    throw Exception("[CodeBuilder::getRegisterByObject] Unsupported object.");
+}
+
+Register CodeBuilder::getRegisterByIdent(const AnsiString& ident) {
+  Object o = getObjectByIdent(ident);
+  return getRegisterByObject(o);
+}
+
+RegisterKind CodeBuilder::getRegisterKindFromObject(const Object& o) {
+  if(o.isBasic()) {
+    BasicObject bo = o.asBasic();
+    if(bo.isInt()) {
+      return bo.asInt().getKind();
+    } else if(bo.isBool()) {
+      return bo.asBool().getKind();
+    } else if(bo.isString()) {
+      return bo.asString().getKind();
     } else
       throw Exception("[getRegisterByIdent] Unsupported basic object.");
   } else 
-    throw Exception("[getRegisterByIdent] Unsupported object " + ident + ".");
+    throw Exception("[getRegisterByIdent] Unsupported object.");
+}
+
+Object CodeBuilder::getObjectById(const int id) {
+  for(int i=0;i<store.Size();i++) {
+    if(store[i].getId()==id) {
+      return store[i].getObj();
+    }
+  }
+  throw Exception("[CodeBuilder::getObjectById] Id not found " + AnsiString(id) + ".");
+}
+
+Object CodeBuilder::getNextObjectByLatteType(const LatteType* type) {
+  if(const IntType *arg = dynamic_cast<const IntType*>(type))
+    return Object::createBasic(BasicObject::createInt(getNextRegister(RegisterKind::createValueI32())));
+  if(const StrType *arg = dynamic_cast<const StrType*>(type))
+    return Object::createBasic(BasicObject::createString(getNextRegister(RegisterKind::createPtr(RegisterKind::createValueI8()))));
+  if(const BoolType *arg = dynamic_cast<const BoolType*>(type))
+    return Object::createBasic(BasicObject::createBool(getNextRegister(RegisterKind::createValueI1())));
+  if(const ArrType *arg = dynamic_cast<const ArrType*>(type))
+    return Object::createArray(ArrayObject(getRegisterKindFromLatteType(arg->lattetype_), getNextRegister(RegisterKind::createPtr(getRegisterKindFromLatteType(arg->lattetype_)))));
 }

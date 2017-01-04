@@ -89,6 +89,16 @@ void Skeleton::visitAss(Ass *ass)
 
 }
 
+void Skeleton::visitArrAss(ArrAss *arrass)
+{
+  /* Code For ArrAss Goes Here */
+
+  visitIdent(arrass->ident_);
+  arrass->expr_1->accept(this);
+  arrass->expr_2->accept(this);
+
+}
+
 void Skeleton::visitIncr(Incr *incr)
 {
   /* Code For Incr Goes Here */
@@ -201,6 +211,14 @@ void Skeleton::visitVoidType(VoidType *voidtype)
 
 }
 
+void Skeleton::visitArrType(ArrType *arrtype)
+{
+  /* Code For ArrType Goes Here */
+
+  arrtype->lattetype_->accept(this);
+
+}
+
 void Skeleton::visitFun(Fun *fun)
 {
   /* Code For Fun Goes Here */
@@ -237,6 +255,24 @@ void Skeleton::visitELitFalse(ELitFalse *elitfalse)
 {
   /* Code For ELitFalse Goes Here */
 
+
+}
+
+void Skeleton::visitENewArr(ENewArr *enewarr)
+{
+  /* Code For ENewArr Goes Here */
+
+  enewarr->lattetype_->accept(this);
+  enewarr->expr_->accept(this);
+
+}
+
+void Skeleton::visitEArr(EArr *earr)
+{
+  /* Code For EArr Goes Here */
+
+  visitIdent(earr->ident_);
+  earr->expr_->accept(this);
 
 }
 

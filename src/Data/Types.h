@@ -76,6 +76,7 @@ class Type {
 
   static const int _TypeBasic;
   static const int _TypeFunction;
+  static const int _TypeArray;
   static const int _TypeNull;
 
   virtual void init(int, void*);
@@ -87,12 +88,15 @@ public:
 
   virtual bool isBasic() const;
   virtual bool isFunction() const;
+  virtual bool isArray() const;
   virtual bool isNull() const;
 
   virtual const BasicType& asBasic() const;
   virtual BasicType& asBasic();
   virtual const FunctionType& asFunction() const;
   virtual FunctionType& asFunction();
+  virtual const Type& asArray() const;
+  virtual Type& asArray();
 
   virtual AnsiString toJSON() const;
   static Type fromJSON(AnsiString);
@@ -101,6 +105,7 @@ public:
 
   static Type createBasic(const BasicType&);
   static Type createFunction(const FunctionType&);
+  static Type createArray(const Type&);
   static Type createNull();
 
 };
@@ -113,8 +118,6 @@ class BasicType {
 
   static const int _TypeInt;
   static const int _TypeBool;
-  static const int _TypeDouble;
-  static const int _TypeChar;
   static const int _TypeString;
   static const int _TypeVoid;
 
@@ -127,8 +130,6 @@ public:
 
   virtual bool isInt() const;
   virtual bool isBool() const;
-  virtual bool isDouble() const;
-  virtual bool isChar() const;
   virtual bool isString() const;
   virtual bool isVoid() const;
 
@@ -140,8 +141,6 @@ public:
 
   static BasicType createInt();
   static BasicType createBool();
-  static BasicType createDouble();
-  static BasicType createChar();
   static BasicType createString();
   static BasicType createVoid();
 

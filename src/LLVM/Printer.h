@@ -17,6 +17,10 @@ private:
   static AnsiString renderBrIfInstr(const BrIfInstr&);
   static AnsiString renderReturnInstr(const Register&);
   static AnsiString renderPhiInstr(const PhiInstr&);
+  static AnsiString renderAllocaInstr(const AllocaInstr&);
+  static AnsiString renderLoadInstr(const LoadInstr&);
+  static AnsiString renderStoreInstr(const StoreInstr&);
+  static AnsiString renderGetElementPtrInstr(const GetElementPtrInstr&);
 
   static AnsiString renderFunctionArgument(const LLVMFunctionArgument&);
   static AnsiString renderRegisterKind(const RegisterKind&);

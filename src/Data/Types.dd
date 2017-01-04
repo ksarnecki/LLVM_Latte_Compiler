@@ -24,14 +24,13 @@ FunctionTypeArray = array of FunctionType
 Type = variant {
   basic : BasicType,
   function : FunctionType,
+  array : Type,
   null
 }
 
 BasicType = variant {
   int,
   bool,
-  double,
-  char,
   string,
   void
 }

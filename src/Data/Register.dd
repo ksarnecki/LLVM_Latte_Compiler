@@ -11,6 +11,8 @@ Ident
 external
 Absyn.H
 
+RegisterArray = array of Register
+
 RegisterKind = variant {
 	valueI1,
 	valueI8,

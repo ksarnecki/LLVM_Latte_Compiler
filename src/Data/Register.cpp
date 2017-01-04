@@ -12,6 +12,63 @@
 //------------- Ident ---------------
 //----------------------------------
 
+//------------- RegisterArray ---------------
+RegisterArray::RegisterArray() {
+}
+AnsiString RegisterArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+RegisterArray RegisterArray::fromJSON(AnsiString s) {
+  RegisterArray arr = RegisterArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("RegisterArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("RegisterArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(Register::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
+}
+RegisterArray::~RegisterArray() {
+}
+//----------------------------------
+
 //------------- RegisterKind ---------------
 const int RegisterKind::_TypeValueI1 = 0;
 const int RegisterKind::_TypeValueI8 = 1;

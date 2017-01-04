@@ -32,6 +32,8 @@ separator nonempty Item "," ;
 
 Ass.       Stmt ::= Ident "=" Expr  ";" ;
 
+ArrAss.    Stmt ::= Ident "[" Expr "]" "=" Expr  ";" ;
+
 Incr.      Stmt ::= Ident "++"  ";" ;
 
 Decr.      Stmt ::= Ident "--"  ";" ;
@@ -58,6 +60,8 @@ BoolType.      LatteType ::= "boolean" ;
 
 VoidType.      LatteType ::= "void" ;
 
+ArrType.       LatteType ::= LatteType "[" "]";
+
 internal   Fun. LatteType ::= LatteType "(" [LatteType] ")" ;
 
 separator  LatteType "," ;
@@ -71,6 +75,10 @@ ELitInt.   Expr6 ::= Integer ;
 ELitTrue.  Expr6 ::= "true" ;
 
 ELitFalse. Expr6 ::= "false" ;
+
+ENewArr.   Expr6 ::= "new" LatteType "[" Expr "]" ;
+
+EArr.   Expr6 ::= Ident "[" Expr "]" ;
 
 EApp.      Expr6 ::= Ident "(" [Expr] ")" ;
 

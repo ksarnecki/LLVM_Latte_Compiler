@@ -29,6 +29,7 @@ public:
   void visitNoInit(NoInit* p);
   void visitInit(Init* p);
   void visitAss(Ass* p);
+  void visitArrAss(ArrAss* p);
   void visitIncr(Incr* p);
   void visitDecr(Decr* p);
   void visitRet(Ret* p);
@@ -41,11 +42,14 @@ public:
   void visitStrType(StrType* p);
   void visitBoolType(BoolType* p);
   void visitVoidType(VoidType* p);
+  void visitArrType(ArrType* p);
   void visitFun(Fun* p);
   void visitEVar(EVar* p);
   void visitELitInt(ELitInt* p);
   void visitELitTrue(ELitTrue* p);
   void visitELitFalse(ELitFalse* p);
+  void visitENewArr(ENewArr* p);
+  void visitEArr(EArr* p);
   void visitEApp(EApp* p);
   void visitEString(EString* p);
   void visitNeg(Neg* p);

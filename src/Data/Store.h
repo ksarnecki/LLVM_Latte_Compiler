@@ -22,7 +22,15 @@
 #include "LLVMProgram.h"
 //----------------------------------
 
+//------------- Type ---------------
+#include "Types.h"
+//----------------------------------
+
 //------------- RegisterKind ---------------
+#include "Register.h"
+//----------------------------------
+
+//------------- Register ---------------
 #include "Register.h"
 //----------------------------------
 
@@ -33,8 +41,6 @@ class BasicObject {
 
   static const int _TypeInt;
   static const int _TypeBool;
-  static const int _TypeDouble;
-  static const int _TypeChar;
   static const int _TypeString;
 
   virtual void init(int, void*);
@@ -46,18 +52,12 @@ public:
 
   virtual bool isInt() const;
   virtual bool isBool() const;
-  virtual bool isDouble() const;
-  virtual bool isChar() const;
   virtual bool isString() const;
 
   virtual const Register& asInt() const;
   virtual Register& asInt();
   virtual const Register& asBool() const;
   virtual Register& asBool();
-  virtual const Register& asDouble() const;
-  virtual Register& asDouble();
-  virtual const Register& asChar() const;
-  virtual Register& asChar();
   virtual const Register& asString() const;
   virtual Register& asString();
 
@@ -68,8 +68,6 @@ public:
 
   static BasicObject createInt(const Register&);
   static BasicObject createBool(const Register&);
-  static BasicObject createDouble(const Register&);
-  static BasicObject createChar(const Register&);
   static BasicObject createString(const Register&);
 
 };
@@ -91,6 +89,25 @@ public:
 };
 //----------------------------------
 
+//------------- ArrayObject ---------------
+class ArrayObject {
+  RegisterKind kind;
+  Register pointer;
+public:
+  ArrayObject(const RegisterKind&, const Register&);
+  virtual const RegisterKind& getKind() const;
+  virtual const Register& getPointer() const;
+  virtual RegisterKind& getKind();
+  virtual Register& getPointer();
+
+  virtual AnsiString toJSON() const;
+  static ArrayObject fromJSON(AnsiString);
+
+  virtual ~ArrayObject();
+
+};
+//----------------------------------
+
 //------------- Object ---------------
 class Object {
   int _type;
@@ -98,8 +115,7 @@ class Object {
 
   static const int _TypeBasic;
   static const int _TypeFunction;
-  static const int _TypeClassObject;
-  static const int _TypeNull;
+  static const int _TypeArray;
 
   virtual void init(int, void*);
   virtual void clean();
@@ -110,13 +126,14 @@ public:
 
   virtual bool isBasic() const;
   virtual bool isFunction() const;
-  virtual bool isClassObject() const;
-  virtual bool isNull() const;
+  virtual bool isArray() const;
 
   virtual const BasicObject& asBasic() const;
   virtual BasicObject& asBasic();
   virtual const FunctionObject& asFunction() const;
   virtual FunctionObject& asFunction();
+  virtual const ArrayObject& asArray() const;
+  virtual ArrayObject& asArray();
 
   virtual AnsiString toJSON() const;
   static Object fromJSON(AnsiString);
@@ -125,8 +142,7 @@ public:
 
   static Object createBasic(const BasicObject&);
   static Object createFunction(const FunctionObject&);
-  static Object createClassObject();
-  static Object createNull();
+  static Object createArray(const ArrayObject&);
 
 };
 //----------------------------------

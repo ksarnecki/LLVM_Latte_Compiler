@@ -44,6 +44,7 @@ class PrintAbsyn : public Visitor
   void visitBStmt(BStmt *p);
   void visitDecl(Decl *p);
   void visitAss(Ass *p);
+  void visitArrAss(ArrAss *p);
   void visitIncr(Incr *p);
   void visitDecr(Decr *p);
   void visitRet(Ret *p);
@@ -61,6 +62,7 @@ class PrintAbsyn : public Visitor
   void visitStrType(StrType *p);
   void visitBoolType(BoolType *p);
   void visitVoidType(VoidType *p);
+  void visitArrType(ArrType *p);
   void visitFun(Fun *p);
   void visitListLatteType(ListLatteType* p);
   void visitExpr(Expr *p); /* abstract class */
@@ -68,6 +70,8 @@ class PrintAbsyn : public Visitor
   void visitELitInt(ELitInt *p);
   void visitELitTrue(ELitTrue *p);
   void visitELitFalse(ELitFalse *p);
+  void visitENewArr(ENewArr *p);
+  void visitEArr(EArr *p);
   void visitEApp(EApp *p);
   void visitEString(EString *p);
   void visitNeg(Neg *p);
@@ -176,6 +180,7 @@ class ShowAbsyn : public Visitor
   void visitBStmt(BStmt *p);
   void visitDecl(Decl *p);
   void visitAss(Ass *p);
+  void visitArrAss(ArrAss *p);
   void visitIncr(Incr *p);
   void visitDecr(Decr *p);
   void visitRet(Ret *p);
@@ -193,6 +198,7 @@ class ShowAbsyn : public Visitor
   void visitStrType(StrType *p);
   void visitBoolType(BoolType *p);
   void visitVoidType(VoidType *p);
+  void visitArrType(ArrType *p);
   void visitFun(Fun *p);
   void visitListLatteType(ListLatteType* p);
   void visitExpr(Expr *p); /* abstract class */
@@ -200,6 +206,8 @@ class ShowAbsyn : public Visitor
   void visitELitInt(ELitInt *p);
   void visitELitTrue(ELitTrue *p);
   void visitELitFalse(ELitFalse *p);
+  void visitENewArr(ENewArr *p);
+  void visitEArr(EArr *p);
   void visitEApp(EApp *p);
   void visitEString(EString *p);
   void visitNeg(Neg *p);

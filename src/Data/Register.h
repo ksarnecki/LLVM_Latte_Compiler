@@ -14,6 +14,23 @@
 #include "Absyn.H"
 //----------------------------------
 
+//------------- RegisterArray ---------------
+#include "DynSet.h"
+
+class Register;
+
+class RegisterArray : public DynSet<Register> {
+public:
+  RegisterArray();
+
+  virtual AnsiString toJSON() const;
+  static RegisterArray fromJSON(AnsiString);
+
+  virtual ~RegisterArray();
+
+};
+//----------------------------------
+
 //------------- RegisterKind ---------------
 class RegisterKind {
   int _type;

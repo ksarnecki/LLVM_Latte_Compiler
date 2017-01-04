@@ -4,8 +4,8 @@
 void Opt::o0ReturnDeadCode(LLVMProgram& program) {
   std::map<std::string, int> refCounter;
 
-  for(int i=0;i<program.Size();i++) {
-    LLVMFunction& f = program[i];
+  for(int i=0;i<program.getFunctions().Size();i++) {
+    LLVMFunction& f = program.getFunctions()[i];
     for(int j=0;j<f.getBlocks().Size();j++) {
       LLVMBlock& b = f.getBlocks()[j];
       LLVMBlock newb(b.getName(), InstrArray());
@@ -38,8 +38,8 @@ void Opt::o0ReturnDeadCode(LLVMProgram& program) {
     }
   }
 
-  for(int i=0;i<program.Size();i++) {
-    LLVMFunction& f = program[i];
+  for(int i=0;i<program.getFunctions().Size();i++) {
+    LLVMFunction& f = program.getFunctions()[i];
     LLVMFunction newf = f;
     newf.getBlocks() = LLVMBlockArray();
     for(int j=0;j<f.getBlocks().Size();j++) {

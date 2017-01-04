@@ -189,7 +189,8 @@ FunctionTypeArray::~FunctionTypeArray() {
 //------------- Type ---------------
 const int Type::_TypeBasic = 0;
 const int Type::_TypeFunction = 1;
-const int Type::_TypeNull = 2;
+const int Type::_TypeArray = 2;
+const int Type::_TypeNull = 3;
 void Type::init(int type, void* ptr) {
   if (type==_TypeBasic) {
     _type = type;
@@ -197,6 +198,9 @@ void Type::init(int type, void* ptr) {
   } else if (type==_TypeFunction) {
     _type = type;
     _ptr = new FunctionType(*(FunctionType*) ptr);
+  } else if (type==_TypeArray) {
+    _type = type;
+    _ptr = new Type(*(Type*) ptr);
   } else if (type==_TypeNull) {
     _type = type;
     _ptr = 0;
@@ -210,6 +214,10 @@ void Type::clean() {
   } else if (_type==_TypeFunction) {
     _type = -1;
     delete (FunctionType*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeArray) {
+    _type = -1;
+    delete (Type*) _ptr;
     _ptr = 0;
   } else if (_type==_TypeNull) {
     _type = -1;
@@ -232,6 +240,9 @@ bool Type::isBasic() const {
 }
 bool Type::isFunction() const {
   return _type==_TypeFunction;
+}
+bool Type::isArray() const {
+  return _type==_TypeArray;
 }
 bool Type::isNull() const {
   return _type==_TypeNull;
@@ -256,6 +267,16 @@ FunctionType& Type::asFunction() {
     throw Exception("Type::asFunction");
   return *(FunctionType*) _ptr;
 }
+const Type& Type::asArray() const {
+  if (_type!=_TypeArray)
+    throw Exception("Type::asArray");
+  return *(Type*) _ptr;
+}
+Type& Type::asArray() {
+  if (_type!=_TypeArray)
+    throw Exception("Type::asArray");
+  return *(Type*) _ptr;
+}
 
 AnsiString Type::toJSON() const {
   StringBuffer _json;
@@ -265,6 +286,8 @@ AnsiString Type::toJSON() const {
     else if (_type==1)
     _json += ((FunctionType*) _ptr)->toJSON();
     else if (_type==2)
+    _json += ((Type*) _ptr)->toJSON();
+    else if (_type==3)
       _json += "0";
     else
       throw Exception("Type::toJSON(" + AnsiString(_type) + ")");
@@ -288,6 +311,11 @@ Type Type::fromJSON(AnsiString s) {
     s = s.SubString(ix+10+1, s.Length()-ix-10-1);
     return Type::createFunction(FunctionType::fromJSON(s));
   } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Type::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Type::createArray(Type::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
     return Type::createNull();
   }
   AnsiString variantName = "";
@@ -307,6 +335,11 @@ Type Type::fromJSON(AnsiString s) {
       throw Exception("Type::fromJSON");
     s = s.SubString(ix+1, s.Length()-ix-1);
     return Type::createFunction(FunctionType::fromJSON(s));
+  } else if (variantName==("array")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Type::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Type::createArray(Type::fromJSON(s));
   } else if (variantName==("null")) {
     return Type::createNull();
   } else 
@@ -328,6 +361,12 @@ Type Type::createFunction(const FunctionType& _param) {
   _value._ptr = new FunctionType(_param);
   return _value;
 }
+Type Type::createArray(const Type& _param) {
+  Type _value;
+  _value._type = _TypeArray;
+  _value._ptr = new Type(_param);
+  return _value;
+}
 Type Type::createNull() {
   Type _value;
   _value._type = _TypeNull;
@@ -341,21 +380,13 @@ Type Type::createNull() {
 //------------- BasicType ---------------
 const int BasicType::_TypeInt = 0;
 const int BasicType::_TypeBool = 1;
-const int BasicType::_TypeDouble = 2;
-const int BasicType::_TypeChar = 3;
-const int BasicType::_TypeString = 4;
-const int BasicType::_TypeVoid = 5;
+const int BasicType::_TypeString = 2;
+const int BasicType::_TypeVoid = 3;
 void BasicType::init(int type, void* ptr) {
   if (type==_TypeInt) {
     _type = type;
     _ptr = 0;
   } else if (type==_TypeBool) {
-    _type = type;
-    _ptr = 0;
-  } else if (type==_TypeDouble) {
-    _type = type;
-    _ptr = 0;
-  } else if (type==_TypeChar) {
     _type = type;
     _ptr = 0;
   } else if (type==_TypeString) {
@@ -372,14 +403,6 @@ void BasicType::clean() {
     if (_ptr!=0)
       throw Exception("BasicType::clean()");
   } else if (_type==_TypeBool) {
-    _type = -1;
-    if (_ptr!=0)
-      throw Exception("BasicType::clean()");
-  } else if (_type==_TypeDouble) {
-    _type = -1;
-    if (_ptr!=0)
-      throw Exception("BasicType::clean()");
-  } else if (_type==_TypeChar) {
     _type = -1;
     if (_ptr!=0)
       throw Exception("BasicType::clean()");
@@ -409,12 +432,6 @@ bool BasicType::isInt() const {
 bool BasicType::isBool() const {
   return _type==_TypeBool;
 }
-bool BasicType::isDouble() const {
-  return _type==_TypeDouble;
-}
-bool BasicType::isChar() const {
-  return _type==_TypeChar;
-}
 bool BasicType::isString() const {
   return _type==_TypeString;
 }
@@ -433,10 +450,6 @@ AnsiString BasicType::toJSON() const {
       _json += "0";
     else if (_type==3)
       _json += "0";
-    else if (_type==4)
-      _json += "0";
-    else if (_type==5)
-      _json += "0";
     else
       throw Exception("BasicType::toJSON(" + AnsiString(_type) + ")");
     _json += "}";
@@ -453,12 +466,8 @@ BasicType BasicType::fromJSON(AnsiString s) {
   } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
     return BasicType::createBool();
   } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
-    return BasicType::createDouble();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
-    return BasicType::createChar();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
     return BasicType::createString();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("5")) {
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
     return BasicType::createVoid();
   }
   AnsiString variantName = "";
@@ -472,10 +481,6 @@ BasicType BasicType::fromJSON(AnsiString s) {
     return BasicType::createInt();
   } else if (variantName==("bool")) {
     return BasicType::createBool();
-  } else if (variantName==("double")) {
-    return BasicType::createDouble();
-  } else if (variantName==("char")) {
-    return BasicType::createChar();
   } else if (variantName==("string")) {
     return BasicType::createString();
   } else if (variantName==("void")) {
@@ -496,18 +501,6 @@ BasicType BasicType::createInt() {
 BasicType BasicType::createBool() {
   BasicType _value;
   _value._type = _TypeBool;
-  _value._ptr = 0;
-  return _value;
-}
-BasicType BasicType::createDouble() {
-  BasicType _value;
-  _value._type = _TypeDouble;
-  _value._ptr = 0;
-  return _value;
-}
-BasicType BasicType::createChar() {
-  BasicType _value;
-  _value._type = _TypeChar;
   _value._ptr = 0;
   return _value;
 }

@@ -13,8 +13,6 @@ AnsiString Printer::renderRegisterKind(const RegisterKind& kind) {
     return "i8";
   if(kind.isValueI32())
     return "i32";
-  if(kind.isValueDouble())
-    return "double";
   throw Exception("[Printer::renderRegisterKind] Unsupported register kind.");
 }
 
@@ -43,9 +41,21 @@ void Printer::printFunction(const LLVMFunction& function) {
 }
 
 void Printer::print(const LLVMProgram& program) {
-  printf("declare void @printInt(i32);\n");
-  for(int i=0;i<program.Size();i++)
-    printFunction(program[i]);
+  AnsiString pre = "declare void @printInt(i32);\n";
+  pre += "declare i32 @scanf(i8*, ...)\n";
+  pre += "declare i32 @readInt()\n";
+  pre += "declare i8* @readString()\n";
+  pre += "declare void @printString(i8*)\n";
+  pre += "declare void @error()\n";
+  pre += "declare i8* @concatenate(i8*, i8*)\n";
+
+  for(int i=0;i<program.getStrings().Size();i++)
+    pre += "@.str"+AnsiString(i)+" = private unnamed_addr constant ["+AnsiString(program.getStrings()[i].Length()+1)+" x i8] c\""+program.getStrings()[i]+"\\00\", align 1\n";
+
+  printf("%s", pre.c_str());
+
+  for(int i=0;i<program.getFunctions().Size();i++)
+    printFunction(program.getFunctions()[i]);
 }
 
 AnsiString Printer::renderBody(const InstrArray& instrs) {
@@ -66,7 +76,17 @@ AnsiString Printer::renderBody(const InstrArray& instrs) {
       outString += "  " + renderReturnInstr(instr.asReturnInstr());
     } else if (instr.isPhiInstr()) {
       outString += "  " + renderPhiInstr(instr.asPhiInstr());
-    } else {
+    } else if (instr.isCommentInstr()) {
+      outString += ";" + instr.asCommentInstr();
+    } else if (instr.isAllocaInstr()) {
+      outString += "  " + renderAllocaInstr(instr.asAllocaInstr());
+    } else if (instr.isLoadInstr()) {
+      outString += "  " + renderLoadInstr(instr.asLoadInstr());
+    } else if (instr.isStoreInstr()) {
+      outString += "  " + renderStoreInstr(instr.asStoreInstr());
+    } else if (instr.isGetElementPtrInstr()) {
+      outString += "  " + renderGetElementPtrInstr(instr.asGetElementPtrInstr());
+    } else{
       throw Exception("[LLVMProgramPrinter::print] Unknown instr type!");
     }
     outString += "\n";
@@ -98,6 +118,12 @@ AnsiString Printer::renderPrintInstr(const Register& reg) {
   return "call void @printInt(i32 " + renderRegister(reg) + ")";
 }
 
+AnsiString Printer::renderAllocaInstr(const AllocaInstr& alloca) {
+  if(alloca.getCount().isSingle())
+    return renderRegister(alloca.getRet()) + " = alloca " + renderRegisterKind(alloca.getRet().getKind().asPtr());
+  return renderRegister(alloca.getRet()) + " = alloca " + renderRegisterKind(alloca.getRet().getKind().asPtr()) + ", i32 " + renderRegister(alloca.getCount().asMultiple());
+}
+
 AnsiString Printer::renderBrInstr(const BrInstr& br) {
   return "br label %" + br.getBlock();
 }
@@ -125,34 +151,66 @@ AnsiString Printer::renderReturnInstr(const Register& ret) {
 AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation) {
   AnsiString ret;
   ret += renderRegister(operation.getOutReg()) + " = ";
-  ret += renderBinaryOperator(operation.getBop()) + " ";
+  ret += renderBinaryOperator(operation.getBop()) + " " + renderRegisterKind(operation.getKind()) + " ";
   ret += renderBinaryOperationArgument(operation.getLArg()) + ", ";
   ret += renderBinaryOperationArgument(operation.getRArg());
+  return ret;
+}
+
+AnsiString Printer::renderLoadInstr(const LoadInstr& load) {
+  AnsiString ret;
+  ret += renderRegister(load.getRet()) + " = ";
+  ret += "load ";
+  ret += renderRegisterKind(load.getPtr().getKind()) + " ";
+  ret += renderRegister(load.getPtr());
+  return ret;
+}
+
+AnsiString Printer::renderStoreInstr(const StoreInstr& store) {
+  AnsiString ret;
+  ret += "store ";
+  ret += renderRegisterKind(store.getVal().getKind()) + " ";
+  ret += renderRegister(store.getVal()) + ", ";
+  ret += renderRegisterKind(store.getPtr().getKind()) + " ";
+  ret += renderRegister(store.getPtr());
+  return ret;
+}
+
+AnsiString Printer::renderGetElementPtrInstr(const GetElementPtrInstr& get) {
+  AnsiString ret;
+  ret += renderRegister(get.getRet()) + " = ";
+  ret += "getelementptr ";
+  ret += renderRegisterKind(get.getPtr().getKind()) + " ";
+  ret += renderRegister(get.getPtr());
+  for(int i=0;i<get.getIndexes().Size();i++) {
+    ret += ", " + renderRegisterKind(get.getIndexes()[i].getKind()) + " ";
+    ret += renderRegister(get.getIndexes()[i]);
+  }
   return ret;
 }
 
 AnsiString Printer::renderBinaryOperator(const BinaryOperator& binaryOperator) {
   // add, sub, div, mul, mod, lth, le, gth, ge, equ, ne
   if (binaryOperator.isAdd()) { 
-    return "add i32";
+    return "add";
   } else if (binaryOperator.isDiv()) {
-    return "udiv i32";
+    return "udiv";
   } else if (binaryOperator.isSub()) {
-    return "sub i32";
+    return "sub";
   } else if (binaryOperator.isMul()) {
-    return "mul i32";
+    return "mul";
   } else if (binaryOperator.isLth()) {
-    return "icmp ult i32";
+    return "icmp ult";
   } else if (binaryOperator.isLe()) {
-    return "icmp ule i32";
+    return "icmp ule";
   } else if (binaryOperator.isGth()) {
-    return "icmp ugt i32";
+    return "icmp ugt";
   } else if (binaryOperator.isGe()) {
-    return "icmp uge i32";
+    return "icmp uge";
   } else if (binaryOperator.isEqu()) {
-    return "icmp eq i32";
+    return "icmp eq";
   } else if (binaryOperator.isNe()) {
-    return "icmp ne i32";
+    return "icmp ne";
   } else {
     throw Exception("[LLVMProgramPrinter::renderBinaryOperationArgument] Unknown argument type!");
   }

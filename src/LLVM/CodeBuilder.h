@@ -13,12 +13,8 @@ private:
   RegisterData registerData = RegisterData(Register(-1, RegisterKind::createNull()), Registers());
   Store store;
   BuilderEnviroment enviroment;
-  Type actType = Type::createNull();
-  Type actRet = Type::createNull();
   LLVMBlockArray actBlocks;
-  LLVMProgram program;
-  int actNesting = 0;
-  TypeErrors errors;
+  LLVMProgram program = LLVMProgram(LLVMFunctionArray(), StringArray());
 
 public:
   void visitProgram(Program* p);
@@ -53,12 +49,15 @@ public:
   void visitIntType(IntType* p);
   void visitStrType(StrType* p);
   void visitBoolType(BoolType* p);
+  void visitArrType(ArrType *p);
   void visitVoidType(VoidType* p);
   void visitFun(Fun* p);
   void visitEVar(EVar* p);
   void visitELitInt(ELitInt* p);
   void visitELitTrue(ELitTrue* p);
   void visitELitFalse(ELitFalse* p);
+  void visitENewArr(ENewArr *p);
+  void visitEArr(EArr *p);
   void visitEApp(EApp* p);
   void visitEString(EString* p);
   void visitNeg(Neg* p);
@@ -85,6 +84,7 @@ public:
   void visitListItem(ListItem* p);
   void visitListLatteType(ListLatteType* p);
   void visitListExpr(ListExpr* p);
+  void visitArrAss(ArrAss *p);
 
   void visitInteger(Integer x);
   void visitChar(Char x);
@@ -95,6 +95,36 @@ public:
   void addPredefinied() {
     Object o1 = Object::createFunction(FunctionObject(LLVMFunctionType::createVoid()));
     updateEnviroment("printInt", o1);
+
+    LLVMFunctionType type2 = LLVMFunctionType::createObj(RegisterKind::createValueI32());
+    Object o2 = Object::createFunction(FunctionObject(type2));
+    updateEnviroment("readInt", o2);
+
+    LLVMFunctionType type3 = LLVMFunctionType::createObj(RegisterKind::createPtr(RegisterKind::createValueI8()));
+    Object o3 = Object::createFunction(FunctionObject(type3));
+    updateEnviroment("readString", o3);
+
+    Object o4 = Object::createFunction(FunctionObject(LLVMFunctionType::createVoid()));
+    updateEnviroment("printString", o4);
+
+    Object o5 = Object::createFunction(FunctionObject(LLVMFunctionType::createVoid()));
+    updateEnviroment("error", o5);
+
+    LLVMFunctionType type6 = LLVMFunctionType::createObj(RegisterKind::createPtr(RegisterKind::createValueI8()));
+    Object o6 = Object::createFunction(FunctionObject(type6));
+    updateEnviroment("concatenate", o6);
+    
+    //InstrArray readIntInstrs;
+    //readIntInstrs.Insert(Instr::createAlloca(getNextRegister(RegisterKind::createValueI32())));
+    /*
+    %x = alloca i32, align 4
+    %1 = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str, i32 0, i32 0), i32* %x)
+    %2 = load i32* %x, align 4
+    */
+    //LLVMBlockArray readIntBlocks;
+    //readIntBlocks.Insert(LLVMBlock("readInt_entry", readIntInstrs));
+    //LLVMFunction readInt("readInt", type, LLVMFunctionArgumentArray(), readIntBlocks);
+
   }
 
   LLVMProgram compile(Visitable *v) {
@@ -107,12 +137,13 @@ public:
   Register getNextRegister(const RegisterKind);
   RegisterKind getBinaryOperationRegisterKind(const Register&, const Register&);
   RegisterKind getRegisterKindFromLatteType(const LatteType*);
-  //AnsiString getIdentByRegister(const Register&);
+  Object getNextObjectByLatteType(const LatteType*);
+  RegisterKind getRegisterKindFromObject(const Object&);
 
   void initBlock(const AnsiString&);
   AnsiString getNextBlockNameByPrefix(const AnsiString&);
   void addInstr(const Instr);
-  void addPhiCase(const AnsiString&, const Register&, const AnsiString&, const AnsiString&);
+  Register addPhiCase(const AnsiString&, const Register&, const AnsiString&, const AnsiString&);
 
   const AnsiString whileToken = "while";
 
@@ -122,6 +153,10 @@ public:
   void updateStore(const AnsiString&, const Object&);
 
   Object getObjectByIdent(const AnsiString&);
+  Object getObjectById(const int);
+
+
+  Register getRegisterByObject(const Object&);
   Register getRegisterByIdent(const AnsiString&);
 };
 

@@ -19,28 +19,38 @@ LLVMFunctionType
 external
 LLVMProgram.h
 
+Type
+external
+Types.h
+
 RegisterKind
 external
 Register.h
 
+Register
+external
+Register.h
+
+
 BasicObject = variant {
   int : Register,
   bool : Register,
-  double : Register,
-  char : Register,
   string : Register
 }
-
 
 FunctionObject = record {
   type : LLVMFunctionType
 }
 
+ArrayObject = record {
+  kind : RegisterKind,
+  pointer : Register
+}
+
 Object = variant {
   basic : BasicObject,
   function : FunctionObject,
-  classObject,
-  null
+  array : ArrayObject
 }
 
 StoreElement = record {

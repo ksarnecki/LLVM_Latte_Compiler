@@ -1,11 +1,14 @@
 int fact (int n) {
   int i=1,r=1 ;
+  int w = 8;
   while (i < n+1) {
     r = r * i ;
     i++;
+    printInt(i);
   }
   return r;
 }
+
 
 int factr (int n) {
   if (n < 2) {
@@ -15,10 +18,20 @@ int factr (int n) {
   }
 }
 
+
 int main () {
-  printInt(fact(7)) ;
-  printInt(factr(7)) ;
+  boolean f;
+  if(f) {
+    printInt(1);
+  }
+  if(!f) {
+    printInt(2);
+  }
   return 0 ;
 }
 
-// iteracyjnie
+/* iteracyjnie
+//TODO 
+//3. Dodanie obsługi "tekst"
+//przesłanianie zmiennych
+//return w voidzie */

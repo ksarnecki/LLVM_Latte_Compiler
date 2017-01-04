@@ -46,9 +46,9 @@ The reserved words used in LatteCPP are the following: \\
 
 \begin{tabular}{lll}
 {\reserved{boolean}} &{\reserved{else}} &{\reserved{false}} \\
-{\reserved{if}} &{\reserved{int}} &{\reserved{return}} \\
-{\reserved{string}} &{\reserved{true}} &{\reserved{void}} \\
-{\reserved{while}} & & \\
+{\reserved{if}} &{\reserved{int}} &{\reserved{new}} \\
+{\reserved{return}} &{\reserved{string}} &{\reserved{true}} \\
+{\reserved{void}} &{\reserved{while}} & \\
 \end{tabular}\\
 
 The symbols used in LatteCPP are the following: \\
@@ -56,12 +56,13 @@ The symbols used in LatteCPP are the following: \\
 \begin{tabular}{lll}
 {\symb{(}} &{\symb{)}} &{\symb{,}} \\
 {\symb{\{}} &{\symb{\}}} &{\symb{;}} \\
-{\symb{{$=$}}} &{\symb{{$+$}{$+$}}} &{\symb{{$-$}{$-$}}} \\
-{\symb{{$-$}}} &{\symb{!}} &{\symb{\&\&}} \\
-{\symb{{$|$}{$|$}}} &{\symb{{$+$}}} &{\symb{*}} \\
-{\symb{/}} &{\symb{\%}} &{\symb{{$<$}}} \\
-{\symb{{$<$}{$=$}}} &{\symb{{$>$}}} &{\symb{{$>$}{$=$}}} \\
-{\symb{{$=$}{$=$}}} &{\symb{!{$=$}}} & \\
+{\symb{{$=$}}} &{\symb{[}} &{\symb{]}} \\
+{\symb{{$+$}{$+$}}} &{\symb{{$-$}{$-$}}} &{\symb{{$-$}}} \\
+{\symb{!}} &{\symb{\&\&}} &{\symb{{$|$}{$|$}}} \\
+{\symb{{$+$}}} &{\symb{*}} &{\symb{/}} \\
+{\symb{\%}} &{\symb{{$<$}}} &{\symb{{$<$}{$=$}}} \\
+{\symb{{$>$}}} &{\symb{{$>$}{$=$}}} &{\symb{{$=$}{$=$}}} \\
+{\symb{!{$=$}}} & & \\
 \end{tabular}\\
 
 \subsection*{Comments}
@@ -110,6 +111,7 @@ All other symbols are terminals.\\
  & {\delimit}  &{\nonterminal{Block}}  \\
  & {\delimit}  &{\nonterminal{LatteType}} {\nonterminal{ListItem}} {\terminal{;}}  \\
  & {\delimit}  &{\nonterminal{Ident}} {\terminal{{$=$}}} {\nonterminal{Expr}} {\terminal{;}}  \\
+ & {\delimit}  &{\nonterminal{Ident}} {\terminal{[}} {\nonterminal{Expr}} {\terminal{]}} {\terminal{{$=$}}} {\nonterminal{Expr}} {\terminal{;}}  \\
  & {\delimit}  &{\nonterminal{Ident}} {\terminal{{$+$}{$+$}}} {\terminal{;}}  \\
  & {\delimit}  &{\nonterminal{Ident}} {\terminal{{$-$}{$-$}}} {\terminal{;}}  \\
  & {\delimit}  &{\terminal{return}} {\nonterminal{Expr}} {\terminal{;}}  \\
@@ -135,6 +137,7 @@ All other symbols are terminals.\\
  & {\delimit}  &{\terminal{string}}  \\
  & {\delimit}  &{\terminal{boolean}}  \\
  & {\delimit}  &{\terminal{void}}  \\
+ & {\delimit}  &{\nonterminal{LatteType}} {\terminal{[}} {\terminal{]}}  \\
 \end{tabular}\\
 
 \begin{tabular}{lll}
@@ -148,6 +151,8 @@ All other symbols are terminals.\\
  & {\delimit}  &{\nonterminal{Integer}}  \\
  & {\delimit}  &{\terminal{true}}  \\
  & {\delimit}  &{\terminal{false}}  \\
+ & {\delimit}  &{\terminal{new}} {\nonterminal{LatteType}} {\terminal{[}} {\nonterminal{Expr}} {\terminal{]}}  \\
+ & {\delimit}  &{\nonterminal{Ident}} {\terminal{[}} {\nonterminal{Expr}} {\terminal{]}}  \\
  & {\delimit}  &{\nonterminal{Ident}} {\terminal{(}} {\nonterminal{ListExpr}} {\terminal{)}}  \\
  & {\delimit}  &{\nonterminal{String}}  \\
  & {\delimit}  &{\terminal{(}} {\nonterminal{Expr}} {\terminal{)}}  \\

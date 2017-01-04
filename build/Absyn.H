@@ -40,6 +40,7 @@ class Decl;
 class NoInit;
 class Init;
 class Ass;
+class ArrAss;
 class Incr;
 class Decr;
 class Ret;
@@ -52,11 +53,14 @@ class IntType;
 class StrType;
 class BoolType;
 class VoidType;
+class ArrType;
 class Fun;
 class EVar;
 class ELitInt;
 class ELitTrue;
 class ELitFalse;
+class ENewArr;
+class EArr;
 class EApp;
 class EString;
 class Neg;
@@ -111,6 +115,7 @@ public:
   virtual void visitNoInit(NoInit *p) = 0;
   virtual void visitInit(Init *p) = 0;
   virtual void visitAss(Ass *p) = 0;
+  virtual void visitArrAss(ArrAss *p) = 0;
   virtual void visitIncr(Incr *p) = 0;
   virtual void visitDecr(Decr *p) = 0;
   virtual void visitRet(Ret *p) = 0;
@@ -123,11 +128,14 @@ public:
   virtual void visitStrType(StrType *p) = 0;
   virtual void visitBoolType(BoolType *p) = 0;
   virtual void visitVoidType(VoidType *p) = 0;
+  virtual void visitArrType(ArrType *p) = 0;
   virtual void visitFun(Fun *p) = 0;
   virtual void visitEVar(EVar *p) = 0;
   virtual void visitELitInt(ELitInt *p) = 0;
   virtual void visitELitTrue(ELitTrue *p) = 0;
   virtual void visitELitFalse(ELitFalse *p) = 0;
+  virtual void visitENewArr(ENewArr *p) = 0;
+  virtual void visitEArr(EArr *p) = 0;
   virtual void visitEApp(EApp *p) = 0;
   virtual void visitEString(EString *p) = 0;
   virtual void visitNeg(Neg *p) = 0;
@@ -371,6 +379,22 @@ public:
   void swap(Ass &);
 };
 
+class ArrAss : public Stmt
+{
+public:
+  Ident ident_;
+  Expr *expr_1;
+  Expr *expr_2;
+
+  ArrAss(const ArrAss &);
+  ArrAss &operator=(const ArrAss &);
+  ArrAss(Ident p1, Expr *p2, Expr *p3);
+  ~ArrAss();
+  virtual void accept(Visitor *v);
+  virtual ArrAss *clone() const;
+  void swap(ArrAss &);
+};
+
 class Incr : public Stmt
 {
 public:
@@ -567,6 +591,20 @@ public:
   void swap(VoidType &);
 };
 
+class ArrType : public LatteType
+{
+public:
+  LatteType *lattetype_;
+
+  ArrType(const ArrType &);
+  ArrType &operator=(const ArrType &);
+  ArrType(LatteType *p1);
+  ~ArrType();
+  virtual void accept(Visitor *v);
+  virtual ArrType *clone() const;
+  void swap(ArrType &);
+};
+
 class Fun : public LatteType
 {
 public:
@@ -634,6 +672,36 @@ public:
   virtual void accept(Visitor *v);
   virtual ELitFalse *clone() const;
   void swap(ELitFalse &);
+};
+
+class ENewArr : public Expr
+{
+public:
+  LatteType *lattetype_;
+  Expr *expr_;
+
+  ENewArr(const ENewArr &);
+  ENewArr &operator=(const ENewArr &);
+  ENewArr(LatteType *p1, Expr *p2);
+  ~ENewArr();
+  virtual void accept(Visitor *v);
+  virtual ENewArr *clone() const;
+  void swap(ENewArr &);
+};
+
+class EArr : public Expr
+{
+public:
+  Ident ident_;
+  Expr *expr_;
+
+  EArr(const EArr &);
+  EArr &operator=(const EArr &);
+  EArr(Ident p1, Expr *p2);
+  ~EArr();
+  virtual void accept(Visitor *v);
+  virtual EArr *clone() const;
+  void swap(EArr &);
 };
 
 class EApp : public Expr

@@ -22,6 +22,26 @@
 #include "Register.h"
 //----------------------------------
 
+//------------- RegisterArray ---------------
+#include "Register.h"
+//----------------------------------
+
+//------------- StringArray ---------------
+#include "DynSet.h"
+
+
+class StringArray : public DynSet<AnsiString> {
+public:
+  StringArray();
+
+  virtual AnsiString toJSON() const;
+  static StringArray fromJSON(AnsiString);
+
+  virtual ~StringArray();
+
+};
+//----------------------------------
+
 //------------- BinaryOperationArgument ---------------
 class BinaryOperationArgument {
   int _type;
@@ -116,16 +136,19 @@ public:
 //------------- BinaryOperation ---------------
 class BinaryOperation {
   Register outReg;
+  RegisterKind kind;
   BinaryOperationArgument lArg;
   BinaryOperationArgument rArg;
   BinaryOperator bop;
 public:
-  BinaryOperation(const Register&, const BinaryOperationArgument&, const BinaryOperationArgument&, const BinaryOperator&);
+  BinaryOperation(const Register&, const RegisterKind&, const BinaryOperationArgument&, const BinaryOperationArgument&, const BinaryOperator&);
   virtual const Register& getOutReg() const;
+  virtual const RegisterKind& getKind() const;
   virtual const BinaryOperationArgument& getLArg() const;
   virtual const BinaryOperationArgument& getRArg() const;
   virtual const BinaryOperator& getBop() const;
   virtual Register& getOutReg();
+  virtual RegisterKind& getKind();
   virtual BinaryOperationArgument& getLArg();
   virtual BinaryOperationArgument& getRArg();
   virtual BinaryOperator& getBop();
@@ -287,6 +310,117 @@ public:
 };
 //----------------------------------
 
+//------------- AllocaInstrCount ---------------
+class AllocaInstrCount {
+  int _type;
+  void* _ptr;
+
+  static const int _TypeSingle;
+  static const int _TypeMultiple;
+
+  virtual void init(int, void*);
+  virtual void clean();
+  AllocaInstrCount();
+public:
+  AllocaInstrCount(const AllocaInstrCount&);
+  virtual AllocaInstrCount& operator=(const AllocaInstrCount&);
+
+  virtual bool isSingle() const;
+  virtual bool isMultiple() const;
+
+  virtual const Register& asMultiple() const;
+  virtual Register& asMultiple();
+
+  virtual AnsiString toJSON() const;
+  static AllocaInstrCount fromJSON(AnsiString);
+
+  virtual ~AllocaInstrCount();
+
+  static AllocaInstrCount createSingle();
+  static AllocaInstrCount createMultiple(const Register&);
+
+};
+//----------------------------------
+
+//------------- AllocaInstr ---------------
+class AllocaInstr {
+  AllocaInstrCount count;
+  Register ret;
+public:
+  AllocaInstr(const AllocaInstrCount&, const Register&);
+  virtual const AllocaInstrCount& getCount() const;
+  virtual const Register& getRet() const;
+  virtual AllocaInstrCount& getCount();
+  virtual Register& getRet();
+
+  virtual AnsiString toJSON() const;
+  static AllocaInstr fromJSON(AnsiString);
+
+  virtual ~AllocaInstr();
+
+};
+//----------------------------------
+
+//------------- LoadInstr ---------------
+class LoadInstr {
+  Register ret;
+  Register ptr;
+public:
+  LoadInstr(const Register&, const Register&);
+  virtual const Register& getRet() const;
+  virtual const Register& getPtr() const;
+  virtual Register& getRet();
+  virtual Register& getPtr();
+
+  virtual AnsiString toJSON() const;
+  static LoadInstr fromJSON(AnsiString);
+
+  virtual ~LoadInstr();
+
+};
+//----------------------------------
+
+//------------- StoreInstr ---------------
+class StoreInstr {
+  Register val;
+  Register ptr;
+public:
+  StoreInstr(const Register&, const Register&);
+  virtual const Register& getVal() const;
+  virtual const Register& getPtr() const;
+  virtual Register& getVal();
+  virtual Register& getPtr();
+
+  virtual AnsiString toJSON() const;
+  static StoreInstr fromJSON(AnsiString);
+
+  virtual ~StoreInstr();
+
+};
+//----------------------------------
+
+//------------- GetElementPtrInstr ---------------
+class GetElementPtrInstr {
+  Register ret;
+  Register ptr;
+  RegisterArray indexes;
+public:
+  GetElementPtrInstr(const Register&, const Register&, const RegisterArray&);
+  virtual const Register& getRet() const;
+  virtual const Register& getPtr() const;
+  virtual const RegisterArray& getIndexes() const;
+  virtual Register& getRet();
+  virtual Register& getPtr();
+  virtual RegisterArray& getIndexes();
+
+  virtual AnsiString toJSON() const;
+  static GetElementPtrInstr fromJSON(AnsiString);
+
+  virtual ~GetElementPtrInstr();
+
+};
+//----------------------------------
+
 //------------- Instr ---------------
 class Instr {
   int _type;
@@ -299,6 +433,11 @@ class Instr {
   static const int _TypeBrInstr;
   static const int _TypeBrIfInstr;
   static const int _TypePrintInstr;
+  static const int _TypeCommentInstr;
+  static const int _TypeAllocaInstr;
+  static const int _TypeLoadInstr;
+  static const int _TypeGetElementPtrInstr;
+  static const int _TypeStoreInstr;
 
   virtual void init(int, void*);
   virtual void clean();
@@ -314,6 +453,11 @@ public:
   virtual bool isBrInstr() const;
   virtual bool isBrIfInstr() const;
   virtual bool isPrintInstr() const;
+  virtual bool isCommentInstr() const;
+  virtual bool isAllocaInstr() const;
+  virtual bool isLoadInstr() const;
+  virtual bool isGetElementPtrInstr() const;
+  virtual bool isStoreInstr() const;
 
   virtual const BinaryOperation& asBinaryOperationInstr() const;
   virtual BinaryOperation& asBinaryOperationInstr();
@@ -329,6 +473,16 @@ public:
   virtual BrIfInstr& asBrIfInstr();
   virtual const Register& asPrintInstr() const;
   virtual Register& asPrintInstr();
+  virtual const AnsiString& asCommentInstr() const;
+  virtual AnsiString& asCommentInstr();
+  virtual const AllocaInstr& asAllocaInstr() const;
+  virtual AllocaInstr& asAllocaInstr();
+  virtual const LoadInstr& asLoadInstr() const;
+  virtual LoadInstr& asLoadInstr();
+  virtual const GetElementPtrInstr& asGetElementPtrInstr() const;
+  virtual GetElementPtrInstr& asGetElementPtrInstr();
+  virtual const StoreInstr& asStoreInstr() const;
+  virtual StoreInstr& asStoreInstr();
 
   virtual AnsiString toJSON() const;
   static Instr fromJSON(AnsiString);
@@ -342,6 +496,11 @@ public:
   static Instr createBrInstr(const BrInstr&);
   static Instr createBrIfInstr(const BrIfInstr&);
   static Instr createPrintInstr(const Register&);
+  static Instr createCommentInstr(const AnsiString&);
+  static Instr createAllocaInstr(const AllocaInstr&);
+  static Instr createLoadInstr(const LoadInstr&);
+  static Instr createGetElementPtrInstr(const GetElementPtrInstr&);
+  static Instr createStoreInstr(const StoreInstr&);
 
 };
 //----------------------------------
@@ -489,13 +648,32 @@ public:
 };
 //----------------------------------
 
-//------------- LLVMProgram ---------------
+//------------- LLVMFunctionArray ---------------
 #include "DynSet.h"
 
 
-class LLVMProgram : public DynSet<LLVMFunction> {
+class LLVMFunctionArray : public DynSet<LLVMFunction> {
 public:
-  LLVMProgram();
+  LLVMFunctionArray();
+
+  virtual AnsiString toJSON() const;
+  static LLVMFunctionArray fromJSON(AnsiString);
+
+  virtual ~LLVMFunctionArray();
+
+};
+//----------------------------------
+
+//------------- LLVMProgram ---------------
+class LLVMProgram {
+  LLVMFunctionArray functions;
+  StringArray strings;
+public:
+  LLVMProgram(const LLVMFunctionArray&, const StringArray&);
+  virtual const LLVMFunctionArray& getFunctions() const;
+  virtual const StringArray& getStrings() const;
+  virtual LLVMFunctionArray& getFunctions();
+  virtual StringArray& getStrings();
 
   virtual AnsiString toJSON() const;
   static LLVMProgram fromJSON(AnsiString);

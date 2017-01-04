@@ -239,6 +239,24 @@ void PrintAbsyn::visitAss(Ass* p)
   _i_ = oldi;
 }
 
+void PrintAbsyn::visitArrAss(ArrAss* p)
+{
+  int oldi = _i_;
+  if (oldi > 0) render(_L_PAREN);
+
+  visitIdent(p->ident_);
+  render('[');
+  _i_ = 0; p->expr_1->accept(this);
+  render(']');
+  render('=');
+  _i_ = 0; p->expr_2->accept(this);
+  render(';');
+
+  if (oldi > 0) render(_R_PAREN);
+
+  _i_ = oldi;
+}
+
 void PrintAbsyn::visitIncr(Incr* p)
 {
   int oldi = _i_;
@@ -444,6 +462,20 @@ void PrintAbsyn::visitVoidType(VoidType* p)
   _i_ = oldi;
 }
 
+void PrintAbsyn::visitArrType(ArrType* p)
+{
+  int oldi = _i_;
+  if (oldi > 0) render(_L_PAREN);
+
+  _i_ = 0; p->lattetype_->accept(this);
+  render('[');
+  render(']');
+
+  if (oldi > 0) render(_R_PAREN);
+
+  _i_ = oldi;
+}
+
 void PrintAbsyn::visitFun(Fun* p)
 {
   int oldi = _i_;
@@ -513,6 +545,37 @@ void PrintAbsyn::visitELitFalse(ELitFalse* p)
   if (oldi > 6) render(_L_PAREN);
 
   render("false");
+
+  if (oldi > 6) render(_R_PAREN);
+
+  _i_ = oldi;
+}
+
+void PrintAbsyn::visitENewArr(ENewArr* p)
+{
+  int oldi = _i_;
+  if (oldi > 6) render(_L_PAREN);
+
+  render("new");
+  _i_ = 0; p->lattetype_->accept(this);
+  render('[');
+  _i_ = 0; p->expr_->accept(this);
+  render(']');
+
+  if (oldi > 6) render(_R_PAREN);
+
+  _i_ = oldi;
+}
+
+void PrintAbsyn::visitEArr(EArr* p)
+{
+  int oldi = _i_;
+  if (oldi > 6) render(_L_PAREN);
+
+  visitIdent(p->ident_);
+  render('[');
+  _i_ = 0; p->expr_->accept(this);
+  render(']');
 
   if (oldi > 6) render(_R_PAREN);
 
@@ -967,6 +1030,19 @@ void ShowAbsyn::visitAss(Ass* p)
   bufAppend(' ');
   bufAppend(')');
 }
+void ShowAbsyn::visitArrAss(ArrAss* p)
+{
+  bufAppend('(');
+  bufAppend("ArrAss");
+  bufAppend(' ');
+  visitIdent(p->ident_);
+  bufAppend(' ');
+  p->expr_1->accept(this);
+  bufAppend(' ');
+  p->expr_2->accept(this);
+  bufAppend(' ');
+  bufAppend(')');
+}
 void ShowAbsyn::visitIncr(Incr* p)
 {
   bufAppend('(');
@@ -1102,6 +1178,17 @@ void ShowAbsyn::visitVoidType(VoidType* p)
 {
   bufAppend("VoidType");
 }
+void ShowAbsyn::visitArrType(ArrType* p)
+{
+  bufAppend('(');
+  bufAppend("ArrType");
+  bufAppend(' ');
+  bufAppend('[');
+  if (p->lattetype_)  p->lattetype_->accept(this);
+  bufAppend(']');
+  bufAppend(' ');
+  bufAppend(')');
+}
 void ShowAbsyn::visitFun(Fun* p)
 {
   bufAppend('(');
@@ -1153,6 +1240,34 @@ void ShowAbsyn::visitELitTrue(ELitTrue* p)
 void ShowAbsyn::visitELitFalse(ELitFalse* p)
 {
   bufAppend("ELitFalse");
+}
+void ShowAbsyn::visitENewArr(ENewArr* p)
+{
+  bufAppend('(');
+  bufAppend("ENewArr");
+  bufAppend(' ');
+  bufAppend('[');
+  if (p->lattetype_)  p->lattetype_->accept(this);
+  bufAppend(']');
+  bufAppend(' ');
+  bufAppend('[');
+  if (p->expr_)  p->expr_->accept(this);
+  bufAppend(']');
+  bufAppend(' ');
+  bufAppend(')');
+}
+void ShowAbsyn::visitEArr(EArr* p)
+{
+  bufAppend('(');
+  bufAppend("EArr");
+  bufAppend(' ');
+  visitIdent(p->ident_);
+  bufAppend(' ');
+  bufAppend('[');
+  if (p->expr_)  p->expr_->accept(this);
+  bufAppend(']');
+  bufAppend(' ');
+  bufAppend(')');
 }
 void ShowAbsyn::visitEApp(EApp* p)
 {
