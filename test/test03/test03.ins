@@ -1,8 +1,10 @@
-int[] sum (int[] a, int[] b) {
+int[] sum (int[] a, int[] b, int c) {
   int[] res = new int [3];
   int i = 0;
-
+  c = 51;
+  printInt(c);
   while (i < 3) {
+    a[i] = 0;
     res[i] = a[i] + b[i];
     printInt(res[i]);
     i++;
@@ -22,11 +24,16 @@ int main() {
 	y[2]=15;
 
 	//test a
-	//int[] res;
-	//res = sum(x, y);
+	int[] resx;
+	resx[0];
+	int ww = 1;
+	resx = sum(x, y, ww);
+	//resx[0];
 
 	//test b
 	//int[] res = sum(x, y);
-	printInt(res[0]+res[2]);
+
+	printInt(resx[0]+resx[2]);
+	printInt(ww);
 	return 0;
 }

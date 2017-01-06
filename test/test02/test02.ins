@@ -1,37 +1,15 @@
-int fact (int n) {
-  int i=1,r=1 ;
-  int w = 8;
-  while (i < n+1) {
-    r = r * i ;
-    i++;
-    printInt(i);
-  }
-  return r;
+void foo(string d) {
+  printString(d);
+  d = "leszcz";
+  printString(d);
+  return;
 }
 
+int main() {
+  string s = "dupa";
 
-int factr (int n) {
-  if (n < 2) {
-    return 1 ;
-  } else {
-    return (n * factr(n-1)) ; 
-  }
+  printString(s);
+  foo(s);
+  printString(s);
+  return 0;
 }
-
-
-int main () {
-  boolean f;
-  if(f) {
-    printInt(1);
-  }
-  if(!f) {
-    printInt(2);
-  }
-  return 0 ;
-}
-
-/* iteracyjnie
-//TODO 
-//3. Dodanie obsługi "tekst"
-//przesłanianie zmiennych
-//return w voidzie */
