@@ -13,4 +13,5 @@ TypeCheckerEnviromentElement = record {
 	nesting : int
 }
 
+
 TypeCheckerEnviroment = array of TypeCheckerEnviromentElement

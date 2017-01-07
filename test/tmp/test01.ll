@@ -49,27 +49,45 @@ if_else_5:
 
 define i32 @main() {
 main_entry: 
-  %reg_22 = add i1 0, 0
+  %reg_22 = add i32 5, 0
   br label %if_cond_7
 if_cond_7: 
-  br i1 %reg_22, label %if_body_8, label %if_end_9
+  %reg_23 = add i1 1, 0
+  br i1 %reg_23, label %if_body_8, label %if_end_9
 if_body_8: 
-  %reg_23 = add i32 1, 0
-  call void @printInt(i32 %reg_23)
+  %reg_24 = add i32 7, 0
+  %reg_25 = call i32 @foo()
+  call void @printInt(i32 %reg_25)
   br label %if_end_9
 if_end_9: 
-  %reg_24  = phi i1 [%reg_22, %if_body_8],[%reg_22, %if_cond_7]
+  %reg_26  = phi i32 [%reg_22, %if_body_8],[%reg_22, %if_cond_7]
+  %reg_27 = add i1 0, 0
   br label %if_cond_10
 if_cond_10: 
-  %reg_25 = sub i1 %reg_22, 1
-  br i1 %reg_25, label %if_body_11, label %if_end_12
+  br i1 %reg_27, label %if_body_11, label %if_end_12
 if_body_11: 
-  %reg_26 = add i32 2, 0
-  call void @printInt(i32 %reg_26)
+  call void @printInt(i32 %reg_22)
   br label %if_end_12
 if_end_12: 
-  %reg_27  = phi i1 [%reg_22, %if_body_11],[%reg_22, %if_cond_10]
-  %reg_28 = add i32 0, 0
-  ret i32 %reg_28
+  %reg_28  = phi i32 [%reg_22, %if_body_11],[%reg_22, %if_cond_10]
+  %reg_29  = phi i1 [%reg_27, %if_body_11],[%reg_27, %if_cond_10]
+  br label %if_cond_13
+if_cond_13: 
+  %reg_30 = sub i1 %reg_27, 1
+  br i1 %reg_30, label %if_body_14, label %if_end_15
+if_body_14: 
+  call void @printInt(i32 %reg_22)
+  br label %if_end_15
+if_end_15: 
+  %reg_31  = phi i32 [%reg_22, %if_body_14],[%reg_22, %if_cond_13]
+  %reg_32  = phi i1 [%reg_27, %if_body_14],[%reg_27, %if_cond_13]
+  %reg_33 = add i32 0, 0
+  ret i32 %reg_33
+}
+
+define i32 @foo() {
+foo_entry: 
+  %reg_34 = add i32 12, 0
+  ret i32 %reg_34
 }
 

@@ -11,7 +11,8 @@ int main(int argc, char ** argv) {
   Program *parse_tree = pProgram(stdin);
   if (parse_tree) { 
   	TypeChecker typeChecker;
-  	typeChecker.check(parse_tree);
+  	if(!typeChecker.check(parse_tree))
+      return -1;
     CodeBuilder cb;
     LLVMProgram program = cb.compile(parse_tree);
     Opt::o0(program);

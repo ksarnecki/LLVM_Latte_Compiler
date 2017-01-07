@@ -15,6 +15,7 @@ public:
   static bool txt(const Type&);
   static void addIdent(const Ident&, const Type&, int, TypeCheckerEnviroment&, TypeCheckerStore&);
   static Type getTypeByIdent(const Ident&, TypeCheckerEnviroment&, TypeCheckerStore&);
+  static bool findIdent(const Ident&, TypeCheckerEnviroment&);
 };
 
 class TypeChecker : public Visitor
@@ -23,8 +24,9 @@ private:
   TypeCheckerStore store;
   TypeCheckerEnviroment enviroment;
   Type actType = Type::createNull();
-  Type actRet = Type::createNull();
+  DynSet<Type> actRet;
   int actNesting = 0;
+  int lineNumber = 0;
   TypeErrors errors;
 
 public:
@@ -41,6 +43,7 @@ void visitProgram(Program* p);
   void visitRelOp(RelOp* p);
   void visitProg(Prog* p);
   void visitFnDef(FnDef* p);
+  void visitFnDefCheck(FnDef* p, bool);
   void visitAr(Ar* p);
   void visitBlk(Blk* p);
   void visitEmpty(Empty* p);
@@ -109,8 +112,24 @@ void visitProgram(Program* p);
 
   void addPredefinied();
 
+  void visitFnDefs(ListTopDef defs) {
+    for(int i=0;i<defs.size();i++) {
+      TopDef* def = defs[i];
+      if(FnDef *fdef = dynamic_cast<FnDef *>(def)) {
+        visitFnDefCheck(fdef, false);
+      } else {
+        throw Exception("[TypeChecker::visitFnDefs] visitFnDefs internal error.");
+      }
+    }
+  }
+
   bool check(Visitable *v) {
     addPredefinied();
+    if(Prog *defs = dynamic_cast<Prog *>(v)) {
+      visitFnDefs(*(defs->listtopdef_));
+    } else {
+      throw Exception("[TypeChecker::visitFnDefs] check internal error.");
+    }
     v->accept(this);
     if(errors.Size()>0) {
       printf("ERROR\n");

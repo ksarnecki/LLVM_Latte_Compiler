@@ -23,8 +23,13 @@ void TypeChecker::visitProg(Prog *prog)
   prog->listtopdef_->accept(this);
 }
 
-void TypeChecker::visitFnDef(FnDef *fndef)
+void TypeChecker::visitFnDef(FnDef *fndef) {
+  visitFnDefCheck(fndef, true);
+}
+
+void TypeChecker::visitFnDefCheck(FnDef *fndef, bool check)
 {
+  //printf("TypeChecker::visitFnDefCheck %s %s %d\n", fndef->ident_.c_str(), check);
   fndef->lattetype_->accept(this);
   Type funRetType = actType;
   TypeArray funArgs;
@@ -39,27 +44,33 @@ void TypeChecker::visitFnDef(FnDef *fndef)
       throw Exception("[typeChecker::visitFnDef] unknown arg kind");
     }
   }
-  actRet = Type::createNull();
+  actRet = DynSet<Type>();
 
   Type function = Type::createFunction(FunctionType(funRetType, funArgs, fenv));
 
-  TypeCheckerManager::addIdent(fndef->ident_, function, actNesting, function.asFunction().getEnv(), store);
+  //TypeCheckerManager::addIdent(fndef->ident_, function, actNesting, function.asFunction().getEnv(), store);
 
-  TypeCheckerManager::addIdent(fndef->ident_, function, actNesting, enviroment, store);
-
+  if(!check)
+    TypeCheckerManager::addIdent(fndef->ident_, function, actNesting, enviroment, store);
 
   TypeCheckerEnviroment prev = enviroment;
   enviroment = function.asFunction().getEnv();
 
+  if(!check) {
+    enviroment = prev;
+    return;
+  }
   fndef->block_->accept(this);
   enviroment = prev;
 
-  if(funRetType.isBasic() && funRetType.asBasic().isVoid() && actRet.isNull()) {
-    return;
-  }
 
-  if(!TypeCheckerManager::cmp(funRetType, actRet)) {
-    addError(fndef->lattetype_->line_number, "Bad return type");
+  if(funRetType.isBasic() && funRetType.asBasic().isVoid() && actRet.Size()==0)
+    return;
+
+  for(int i=0;i<actRet.Size();i++) {
+    if(!TypeCheckerManager::cmp(funRetType, actRet[i])) {
+      addError(fndef->lattetype_->line_number, "Bad return type");
+    }
   }
 
 }
@@ -67,7 +78,13 @@ void TypeChecker::visitFnDef(FnDef *fndef)
 void TypeChecker::visitAr(Ar *ar)
 {
   ar->lattetype_->accept(this);
-  visitIdent(ar->ident_);
+  if(TypeCheckerManager::findIdent(ar->ident_, enviroment)) {
+     visitIdent(ar->ident_);
+  } else {
+    addError(ar->line_number, AnsiString(ar->ident_) + " ident not found");
+    return;
+  }
+ 
 }
 
 void TypeChecker::visitBlk(Blk *blk)
@@ -110,7 +127,12 @@ void TypeChecker::visitDecl(Decl *decl)
 
 void TypeChecker::visitAss(Ass *ass)
 {
-  visitIdent(ass->ident_);
+  if(TypeCheckerManager::findIdent(ass->ident_, enviroment)) {
+     visitIdent(ass->ident_);
+  } else {
+    addError(ass->line_number, AnsiString(ass->ident_) + " ident not found");
+    return;
+  }
   Type identType = actType;
   ass->expr_->accept(this);
   Type exprType = actType;
@@ -121,7 +143,12 @@ void TypeChecker::visitAss(Ass *ass)
 
 void TypeChecker::visitIncr(Incr *incr)
 {
-  visitIdent(incr->ident_);
+  if(TypeCheckerManager::findIdent(incr->ident_, enviroment)) {
+     visitIdent(incr->ident_);
+  } else {
+    addError(incr->line_number, AnsiString(incr->ident_) + " ident not found");
+    return;
+  }
   if(!TypeCheckerManager::cmp(actType, Type::createBasic(BasicType::createInt()))) {
     addError(incr->line_number, "Bad expression type");
   }
@@ -129,7 +156,12 @@ void TypeChecker::visitIncr(Incr *incr)
 
 void TypeChecker::visitDecr(Decr *decr)
 {
-  visitIdent(decr->ident_);
+  if(TypeCheckerManager::findIdent(decr->ident_, enviroment)) {
+     visitIdent(decr->ident_);
+  } else {
+    addError(decr->line_number, AnsiString(decr->ident_) + " ident not found");
+    return;
+  }
   if(!TypeCheckerManager::cmp(actType, Type::createBasic(BasicType::createInt()))) {
     addError(decr->line_number, "Bad expression type");
   }
@@ -138,12 +170,12 @@ void TypeChecker::visitDecr(Decr *decr)
 void TypeChecker::visitRet(Ret *ret)
 {
   ret->expr_->accept(this);
-  actRet = actType;
+  actRet.Insert(actType);
 }
 
 void TypeChecker::visitVRet(VRet *vret)
 {
-  actRet = Type::createBasic(BasicType::createVoid());
+  actRet.Insert(Type::createBasic(BasicType::createVoid()));
 }
 
 void TypeChecker::visitCond(Cond *cond)
@@ -248,7 +280,12 @@ void TypeChecker::visitEArr(EArr *earr) {
   earr->expr_->accept(this);
   if(!TypeCheckerManager::cmp(actType, Type::createBasic(BasicType::createInt())))
     addError(earr->line_number, "Array index exp not int");
-  visitIdent(earr->ident_);
+  if(TypeCheckerManager::findIdent(earr->ident_, enviroment)) {
+     visitIdent(earr->ident_);
+  } else {
+    addError(earr->line_number, AnsiString(earr->ident_) + " ident not found");
+    return;
+  }
   Type t =  actType.asArray();
   actType = t;
 }
@@ -269,7 +306,13 @@ void TypeChecker::visitENewArr(ENewArr *enewarr)
 
 void TypeChecker::visitEApp(EApp *eapp)
 {
-  visitIdent(eapp->ident_);
+  if(TypeCheckerManager::findIdent(eapp->ident_, enviroment)) {
+    visitIdent(eapp->ident_);
+  } else {
+    addError(eapp->line_number, AnsiString(eapp->ident_) + " ident not found");
+    return;
+  }
+    
   Type type = TypeCheckerManager::getTypeByIdent(eapp->ident_, enviroment, store);
   if(type.isFunction()) {
     FunctionType ftype = type.asFunction();
@@ -292,7 +335,7 @@ void TypeChecker::visitEApp(EApp *eapp)
   } else {
     addError(eapp->line_number, AnsiString(eapp->ident_)  + " is not a function.");
   }
-  
+
 }
 
 void TypeChecker::visitEString(EString *estring)
@@ -566,6 +609,15 @@ void TypeCheckerManager::addIdent(const Ident& ident, const Type& t, int nesting
   env.Insert(TypeCheckerEnviromentElement(ident, id, nesting));
 }
 
+bool TypeCheckerManager::findIdent(const Ident& ident, TypeCheckerEnviroment& env) {
+  for(int i=0;i<env.Size();i++) {
+    if(env[i].getIdent() == ident) {
+      return true;
+    }
+  }
+  return false;
+}
+
 Type TypeCheckerManager::getTypeByIdent(const Ident& ident, TypeCheckerEnviroment& env, TypeCheckerStore& str) {
   for(int i=0;i<env.Size();i++) {
     if(env[i].getIdent() == ident) {
@@ -576,9 +628,7 @@ Type TypeCheckerManager::getTypeByIdent(const Ident& ident, TypeCheckerEnviromen
       throw Exception("[TypeCheckerManager::getTypeByIdent] internal error");
     }
   }
-  //todo
   throw Exception("[TypeCheckerManager::getTypeByIdent] ident not found: " + ident);
-  return Type::createNull();
 }
 
 void TypeChecker::addPredefinied() {

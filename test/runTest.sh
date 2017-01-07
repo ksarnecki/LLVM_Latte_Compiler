@@ -1,6 +1,5 @@
 #!/bin/bash
 echo "***COMPILING***"
-../llvm_latte_compiler.bin < $1/$1.ins
 ../llvm_latte_compiler.bin < $1/$1.ins > tmp/$1.ll
 echo "***COMPILING...***"
 llvm-as -o tmp/$1.bc tmp/$1.ll

@@ -19,21 +19,26 @@ int factr (int n) {
   }
 }
 
-
 int main () {
+  int i = 5;
+  if(true) {
+    int i = 7;
+    printInt(foo());
+  }
   boolean f;
   if(f) {
-    printInt(1);
+    printInt(i);
   }
   if(!f) {
-    printInt(2);
+    printInt(i);
   }
   return 0 ;
 }
 
+int foo() {
+  int x = 12;
+  return x;
+}
+
 /* iteracyjnie
-//TODO 
-//3. Dodanie obsługi "tekst"
-//przesłanianie zmiennych
-//return w voidzie */
 /*dowolna kolejnosc funkcji*/

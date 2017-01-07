@@ -127,8 +127,31 @@ public:
 
   }
 
+  void visitFnDefs(ListTopDef defs) {
+    for(int i=0;i<defs.size();i++) {
+      TopDef* def = defs[i];
+      if(FnDef *fndef = dynamic_cast<FnDef *>(def)) {
+        LLVMFunctionType fRetType = LLVMFunctionType::createVoid();
+        if(const VoidType *arg = dynamic_cast<const VoidType*>(fndef->lattetype_)) {
+          //printf("%s void\n", fndef->ident_.c_str());
+        } else {
+          fRetType = LLVMFunctionType::createObj(getRegisterKindFromLatteType(fndef->lattetype_));
+          //printf("%s not void\n", fndef->ident_.c_str());
+        }
+        updateEnviroment(fndef->ident_, Object::createFunction(FunctionObject(fRetType)));
+      } else {
+        throw Exception("[TypeChecker::visitFnDefs] visitFnDefs internal error.");
+      }
+    }
+  }
+
   LLVMProgram compile(Visitable *v) {
     addPredefinied();
+    if(Prog *defs = dynamic_cast<Prog *>(v)) {
+      visitFnDefs(*(defs->listtopdef_));
+    } else {
+      throw Exception("[TypeChecker::visitFnDefs] check internal error.");
+    }
     v->accept(this);
     return program;
   }

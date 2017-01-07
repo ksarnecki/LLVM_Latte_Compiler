@@ -512,7 +512,7 @@ void CodeBuilder::visitEArr(EArr *earr) {
   arr.Insert(registerData.getLastRegister());
 
   if(!getObjectByIdent(earr->ident_).isArray())
-    throw Exception(AnsiString("") + "[CodeBuilder::visitEArr] is not array " + earr->ident_ + " " + getObjectByIdent(earr->ident_).toJSON());
+    throw Exception(AnsiString("") + "[CodeBuilder::visitEArr] is not array " + earr->ident_);
   
   Register strPtr = getObjectByIdent(earr->ident_).asArray();
 
@@ -520,7 +520,6 @@ void CodeBuilder::visitEArr(EArr *earr) {
   Register arrReg = getNextRegister(arrReg1.getKind().asPtr());
   addInstr(Instr::createLoadInstr(LoadInstr(arrReg, arrReg1)));
 
-  addInstr(Instr::createCommentInstr(arrReg.toJSON()));
   Register ptrReg = getNextRegister(arrReg.getKind());
   Register outReg = getNextRegister(arrReg.getKind().asPtr());
 
@@ -538,16 +537,18 @@ void CodeBuilder::visitEArr(EArr *earr) {
 
 void CodeBuilder::visitArrAss(ArrAss *arrass) {
 
- /* arrass->expr_1->accept(this);
+  arrass->expr_1->accept(this);
 
   RegisterArray arr;
   arr.Insert(registerData.getLastRegister());
 
   if(!getObjectByIdent(arrass->ident_).isArray())
     throw Exception("[CodeBuilder::visitArrAss] is not array" + arrass->ident_);
-  ArrayObject ao = getObjectByIdent(arrass->ident_).asArray();
+  Register strPtr = getObjectByIdent(arrass->ident_).asArray();
 
-  Register arrReg = ao.getPointer();
+  Register arrPtr = getArrayPtr(strPtr);
+  Register arrReg = getNextRegister(arrPtr.getKind().asPtr());
+  addInstr(Instr::createLoadInstr(LoadInstr(arrReg, arrPtr)));
   Register ptrReg = getNextRegister(arrReg.getKind());
 
   GetElementPtrInstr ginstr(ptrReg, arrReg, arr);
@@ -556,7 +557,7 @@ void CodeBuilder::visitArrAss(ArrAss *arrass) {
   arrass->expr_2->accept(this);
 
   StoreInstr linstr(registerData.getLastRegister(), ptrReg);
-  addInstr(Instr::createStoreInstr(linstr));*/
+  addInstr(Instr::createStoreInstr(linstr));
 
 }
 
