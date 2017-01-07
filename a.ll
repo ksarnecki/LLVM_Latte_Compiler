@@ -109,6 +109,18 @@ define void @_Z1sPi(i32* %s) #1 {
 }
 
 ; Function Attrs: nounwind
+define i32 @_Z3modii(i32 %a, i32 %b) #1 {
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  store i32 %a, i32* %1, align 4
+  store i32 %b, i32* %2, align 4
+  %3 = load i32* %1, align 4
+  %4 = load i32* %2, align 4
+  %5 = srem i32 %3, %4
+  ret i32 %5
+}
+
+; Function Attrs: nounwind
 define i32 @_Z3tabv() #1 {
   %x = alloca [4 x i32], align 4
   %1 = getelementptr inbounds [4 x i32]* %x, i32 0, i32 1

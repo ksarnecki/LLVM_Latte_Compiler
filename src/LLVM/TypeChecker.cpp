@@ -29,22 +29,35 @@ void TypeChecker::visitFnDef(FnDef *fndef) {
 
 void TypeChecker::visitFnDefCheck(FnDef *fndef, bool check)
 {
-  //printf("TypeChecker::visitFnDefCheck %s %s %d\n", fndef->ident_.c_str(), check);
+  for(int i=0;i<enviroment.Size();i++)
+    if(!check && enviroment[i].getIdent() == fndef->ident_ && store[enviroment[i].getStoreId()].getType().isFunction()) {
+      addError(fndef->lattetype_->line_number, "Repeated function name");
+      return;
+    }
   fndef->lattetype_->accept(this);
   Type funRetType = actType;
   TypeArray funArgs;
   TypeCheckerEnviroment fenv = enviroment;
+  DynSet<AnsiString> idents;
   for (ListArg::iterator i = fndef->listarg_->begin() ; i != fndef->listarg_->end() ; ++i)
   {
     if(Ar *arg = dynamic_cast<Ar*>(*i)) {
       arg->lattetype_->accept(this);
       funArgs.Insert(actType);
+      for(int j=0;j<idents.Size();j++) {
+        if(idents[j]==arg->ident_) {
+          addError(fndef->lattetype_->line_number, "Repeated argument name");
+          return;
+        }
+      }
+      idents.Insert(arg->ident_);
       TypeCheckerManager::addIdent(arg->ident_, actType, 0, fenv, store);
     } else {
       throw Exception("[typeChecker::visitFnDef] unknown arg kind");
     }
   }
   actRet = DynSet<Type>();
+  actOptRet = DynSet<Type>();
 
   Type function = Type::createFunction(FunctionType(funRetType, funArgs, fenv));
 
@@ -67,9 +80,18 @@ void TypeChecker::visitFnDefCheck(FnDef *fndef, bool check)
   if(funRetType.isBasic() && funRetType.asBasic().isVoid() && actRet.Size()==0)
     return;
 
+  if(actRet.Size()==0)
+    addError(fndef->lattetype_->line_number, "No return stmnt");
+
   for(int i=0;i<actRet.Size();i++) {
     if(!TypeCheckerManager::cmp(funRetType, actRet[i])) {
-      addError(fndef->lattetype_->line_number, "Bad return type");
+      addError(fndef->lattetype_->line_number, AnsiString("Bad return type ") + actRet[i].toJSON().c_str());
+    }
+  }
+
+  for(int i=0;i<actOptRet.Size();i++) {
+    if(!TypeCheckerManager::cmp(funRetType, actOptRet[i])) {
+      addError(fndef->lattetype_->line_number, AnsiString("Bad opt return type ") + actOptRet[i].toJSON().c_str());
     }
   }
 
@@ -112,12 +134,18 @@ void TypeChecker::visitDecl(Decl *decl)
   for (ListItem::iterator i = decl->listitem_->begin() ; i != decl->listitem_->end() ; ++i)
   {
     if(Init *item = dynamic_cast<Init*>(*i)) {
+      for(int i=0;i<enviroment.Size();i++) 
+        if(enviroment[i].getIdent()==item->ident_ && enviroment[i].getNesting()==actNesting)
+          addError(item->expr_->line_number, "Prev declaration found!");
       item->expr_->accept(this);
       if(!TypeCheckerManager::cmp(declType, actType)) {
         addError(item->expr_->line_number, "Bad init expression type");
       } else 
         TypeCheckerManager::addIdent(item->ident_, declType, actNesting, enviroment, store);
     } else if(NoInit *item = dynamic_cast<NoInit*>(*i)) {
+      for(int i=0;i<enviroment.Size();i++) 
+        if(enviroment[i].getIdent()==item->ident_ && enviroment[i].getNesting()==actNesting)
+          addError(decl->lattetype_->line_number, "Prev declaration found!");
       TypeCheckerManager::addIdent(item->ident_, declType, actNesting, enviroment, store);
     } else {
       throw Exception("[TypeChecker::visitDecl] casting error");
@@ -180,21 +208,52 @@ void TypeChecker::visitVRet(VRet *vret)
 
 void TypeChecker::visitCond(Cond *cond)
 {
+  isConstBool = false;
+  DynSet<Type> actRetPrev = actRet;
   cond->expr_->accept(this);
   if(!TypeCheckerManager::cmp(actType, Type::createBasic(BasicType::createBool()))) {
     addError(cond->expr_->line_number, "Bad expression type");
   }
-  cond->stmt_->accept(this);
+  if(!isConstBool || constBoolVal)
+    cond->stmt_->accept(this);
+  if(!isConstBool) {
+    for(int i=actRetPrev.Size();i<actRet.Size();i++) {
+      actOptRet.Insert(actRet[i]);
+    }
+    actRet = actRetPrev;
+  }
 }
 
 void TypeChecker::visitCondElse(CondElse *condelse)
 {
+  DynSet<Type> actRetPrev = actRet;
   condelse->expr_->accept(this);
   if(!TypeCheckerManager::cmp(actType, Type::createBasic(BasicType::createBool()))) {
     addError(condelse->expr_->line_number, "Bad expression type");
   }
-  condelse->stmt_1->accept(this);
-  condelse->stmt_2->accept(this);
+  if(isConstBool) {
+    if(constBoolVal) {
+      condelse->stmt_1->accept(this);
+    } else {
+      condelse->stmt_2->accept(this);
+    }
+  } else {
+    bool twoPaths;
+    condelse->stmt_1->accept(this);
+    for(int i=actRetPrev.Size();i<actRet.Size();i++) {
+      actOptRet.Insert(actRet[i]);
+    }
+    twoPaths = actRet.Size() - actRetPrev.Size() > 0;
+    actRet = actRetPrev;
+    condelse->stmt_2->accept(this);
+    twoPaths = twoPaths && actRet.Size() - actRetPrev.Size() > 0;
+    if(twoPaths)
+      return;
+    for(int i=actRetPrev.Size();i<actRet.Size();i++) {
+      actOptRet.Insert(actRet[i]);
+    }
+    actRet = actRetPrev;
+  }
 }
 
 void TypeChecker::visitWhileStmnt(WhileStmnt *whilestmnt)
@@ -269,11 +328,15 @@ void TypeChecker::visitELitInt(ELitInt *elitint)
 void TypeChecker::visitELitTrue(ELitTrue *elittrue)
 {
    actType = Type::createBasic(BasicType::createBool());
+   constBoolVal = true;
+   isConstBool = true;
 }
 
 void TypeChecker::visitELitFalse(ELitFalse *elitfalse)
 {
   actType = Type::createBasic(BasicType::createBool());
+  constBoolVal = false;
+  isConstBool = true;
 }
 
 void TypeChecker::visitEArr(EArr *earr) {
@@ -357,6 +420,7 @@ void TypeChecker::visitNott(Nott *nott)
   if(!TypeCheckerManager::cmp(actType, Type::createBasic(BasicType::createBool()))) {
     addError(nott->expr_->line_number, "Bad expression type");
   }
+  constBoolVal = !constBoolVal;
 }
 
 void TypeChecker::visitEMul(EMul *emul)
@@ -392,22 +456,62 @@ void TypeChecker::visitEAdd(EAdd *eadd)
 
 void TypeChecker::visitERel(ERel *erel)
 {
+  isConstBool = false;
   erel->expr_1->accept(this);
   Type exp1 = actType;
+  bool constBoolValPrev = constBoolVal;
+  bool isConstBoolPrev = isConstBool;
+  isConstBool = false;
   erel->expr_2->accept(this);
   Type exp2 = actType;
-  if(!TypeCheckerManager::cmp(exp1, Type::createBasic(BasicType::createInt())) || !TypeCheckerManager::cmp(exp2, Type::createBasic(BasicType::createInt()))) {
+
+  if(isConstBoolPrev && isConstBool) {
+    if(EQU* e = dynamic_cast<EQU*>(erel->relop_)) {
+      if(constBoolValPrev == constBoolVal) {
+        constBoolVal = true;
+      } else {
+        constBoolVal = false;
+      }
+    } else if(NE* e = dynamic_cast<NE*>(erel->relop_)) {
+      if(constBoolValPrev == constBoolVal) {
+        constBoolVal = false;
+      } else {
+        constBoolVal = true;
+      }
+    } else 
+      addError(erel->expr_2->line_number, "Bad rel expression arg type");
+  } else {
+    isConstBool = false;
+  }
+
+  if(!TypeCheckerManager::cmp(exp1, exp2)) {
     addError(erel->expr_2->line_number, "Bad rel expression arg type");
+  }
+  if(!TypeCheckerManager::cmp(exp1, Type::createBasic(BasicType::createInt())) && !TypeCheckerManager::cmp(exp1, Type::createBasic(BasicType::createBool()))) {
+     addError(erel->expr_2->line_number, "Bad rel expression arg type");
   }
   actType = Type::createBasic(BasicType::createBool());
 }
 
 void TypeChecker::visitEAnd(EAnd *eand)
 {
+  isConstBool = false;
   eand->expr_1->accept(this);
   Type exp1 = actType;
+  bool constBoolValPrev = constBoolVal;
+  bool isConstBoolPrev = isConstBool;
+  isConstBool = false;
   eand->expr_2->accept(this);
   Type exp2 = actType;
+  if(isConstBoolPrev && isConstBool) {
+    if(constBoolValPrev && constBoolVal) {
+      //nothing
+    } else {
+      constBoolVal = false;
+    }
+  } else {
+    isConstBool = false;
+  }
   if(!TypeCheckerManager::cmp(exp1, Type::createBasic(BasicType::createBool())) || !TypeCheckerManager::cmp(exp2, Type::createBasic(BasicType::createBool()))) {
     addError(eand->expr_2->line_number, "Bad rel expression arg type");
   }
@@ -415,11 +519,24 @@ void TypeChecker::visitEAnd(EAnd *eand)
 
 void TypeChecker::visitEOr(EOr *eor)
 {
+  isConstBool = false;
   eor->expr_1->accept(this);
   Type exp1 = actType;
+  bool constBoolValPrev = constBoolVal;
+  bool isConstBoolPrev = isConstBool;
+  isConstBool = false;
   eor->expr_2->accept(this);
   Type exp2 = actType;
-    if(!TypeCheckerManager::cmp(exp1, Type::createBasic(BasicType::createBool())) || !TypeCheckerManager::cmp(exp2, Type::createBasic(BasicType::createBool()))) {
+  if(isConstBoolPrev && isConstBool) {
+    if(constBoolValPrev || constBoolVal) {
+     constBoolVal = true;
+    } else {
+      //nothing
+    }
+  } else {
+    isConstBool = false;
+  }
+  if(!TypeCheckerManager::cmp(exp1, Type::createBasic(BasicType::createBool())) || !TypeCheckerManager::cmp(exp2, Type::createBasic(BasicType::createBool()))) {
     addError(eor->expr_2->line_number, "Bad rel expression arg type");
   }
 }
@@ -506,6 +623,13 @@ void TypeChecker::visitListStmt(ListStmt* liststmt)
 {
   for (ListStmt::iterator i = liststmt->begin() ; i != liststmt->end() ; ++i)
   {
+    if(VRet* block = dynamic_cast<VRet*>(*i)) {
+      (*i)->accept(this);
+      return;
+    } else if(Ret* block = dynamic_cast<Ret*>(*i)) {
+      (*i)->accept(this);
+      return;
+    }
     (*i)->accept(this);
   }
 }
@@ -606,6 +730,12 @@ bool TypeCheckerManager::txt(const Type& t) {
 void TypeCheckerManager::addIdent(const Ident& ident, const Type& t, int nesting, TypeCheckerEnviroment& env, TypeCheckerStore& str) {
   int id = str.Size();
   str.Insert(TypeCheckerStoreElement(id, t));
+  for(int i=0;i<env.Size();i++) {
+    if(env[i].getIdent()==ident) {
+      env[i].getStoreId() = id;
+      return;
+    }
+  }
   env.Insert(TypeCheckerEnviromentElement(ident, id, nesting));
 }
 

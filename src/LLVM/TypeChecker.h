@@ -25,9 +25,12 @@ private:
   TypeCheckerEnviroment enviroment;
   Type actType = Type::createNull();
   DynSet<Type> actRet;
+  DynSet<Type> actOptRet;
   int actNesting = 0;
   int lineNumber = 0;
   TypeErrors errors;
+  bool isConstBool;
+  bool constBoolVal;
 
 public:
 void visitProgram(Program* p);

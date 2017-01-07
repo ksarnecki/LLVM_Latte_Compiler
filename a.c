@@ -42,6 +42,11 @@ struct RT {
 void s(int* s) {
   RT r;
   r.tab[5] = 12;
+  7 % 4;
+}
+
+int modulo(int a, int b) {
+  return a % b;
 }
 
 int tab() {

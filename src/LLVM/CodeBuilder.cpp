@@ -71,6 +71,10 @@ void CodeBuilder::visitFnDef(FnDef *fndef)
   initBlock(fName+"_entry");
   updateEnviroment(fName, Object::createFunction(FunctionObject(fRetType)));
   fndef->block_->accept(this);
+
+  if(fRetType.isVoid())
+    visitVRet(new VRet());
+
   LLVMBlockArray fBlocks = actBlocks;
   program.getFunctions().Insert(LLVMFunction(fName, fRetType, fArgs, fBlocks));
 
@@ -229,7 +233,19 @@ void CodeBuilder::visitCond(Cond *cond)
   */
   initBlock(wcondblock);
   cond->expr_->accept(this);
-  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, wendblock)));
+
+  bool constExpr = registerData.getLastRegister().getPlain().isTrue();
+  bool constVal = registerData.getLastRegister().getPlain().isTrue() && registerData.getLastRegister().getPlain().asTrue() == "1";
+
+  if(!constExpr) {
+    addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, wendblock)));
+  } else {
+    if(constVal) {
+      addInstr(Instr::createBrInstr(wbodyblock));
+    } else {
+      addInstr(Instr::createBrInstr(wendblock));
+    }
+  } 
   
   DynSet<Object> objs;
   DynSet<AnsiString> idents;
@@ -303,7 +319,18 @@ void CodeBuilder::visitCondElse(CondElse *condelse)
 
   initBlock(wcondblock);
   condelse->expr_->accept(this);
-  addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, welseblock)));
+
+  bool constExpr = registerData.getLastRegister().getPlain().isTrue();
+  bool constVal = registerData.getLastRegister().getPlain().isTrue() && registerData.getLastRegister().getPlain().asTrue() == "1";
+  if(!constExpr) {
+     addInstr(Instr::createBrIfInstr(BrIfInstr(registerData.getLastRegister(), wbodyblock, welseblock)));
+  } else {
+    if(constVal) {
+      addInstr(Instr::createBrInstr(wbodyblock));
+    } else {
+      addInstr(Instr::createBrInstr(welseblock));
+    }
+  } 
   
   BuilderEnviroment e = enviroment;
   Store s = store;
@@ -484,23 +511,13 @@ void CodeBuilder::visitELitInt(ELitInt *elitint)
 
 void CodeBuilder::visitELitTrue(ELitTrue *elittrue)
 {
-  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(1);
-  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
-  Register outReg = getNextRegister(RegisterKind::createValueI1());
-  BinaryOperation bo = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, BinaryOperator::createAdd());
-  Instr instr = Instr::createBinaryOperationInstr(bo);
-  addInstr(instr);
+  Register outReg = getNextPlainRegister(RegisterKind::createValueI1(), "1");
   registerData.getLastRegister() = outReg;
 }
 
 void CodeBuilder::visitELitFalse(ELitFalse *elitfalse)
 {
-  BinaryOperationArgument lArg = BinaryOperationArgument::createNumber(0);
-  BinaryOperationArgument rArg = BinaryOperationArgument::createNumber(0);
-  Register outReg = getNextRegister(RegisterKind::createValueI1());
-  BinaryOperation bo = BinaryOperation(outReg, outReg.getKind(), lArg, rArg, BinaryOperator::createAdd());
-  Instr instr = Instr::createBinaryOperationInstr(bo);
-  addInstr(instr);
+  Register outReg = getNextPlainRegister(RegisterKind::createValueI1(), "0");
   registerData.getLastRegister() = outReg;
 }
 
@@ -633,6 +650,8 @@ void CodeBuilder::visitEMul(EMul *emul)
     bor = BinaryOperator::createMul();
   } else if(Mod *mulop = dynamic_cast<Mod*>(emul->mulop_)) {
     bor = BinaryOperator::createMod();
+  } else if(Div *mulop = dynamic_cast<Div*>(emul->mulop_)) {
+    bor = BinaryOperator::createDiv();
   } else 
     throw Exception("[CodeBuilder::visitEMul] Unknown emul->mulop_ kind.");
   BinaryOperation bon = BinaryOperation(outReg, regKind, lArg, rArg, bor);
@@ -712,11 +731,12 @@ void CodeBuilder::visitEAnd(EAnd *eand)
   Register r1 = registerData.getLastRegister();
   initBlock(ifandcond2);
   eand->expr_2->accept(this);
+  AnsiString actBlock2 = actBlocks[actBlocks.Size()-1].getName();
   addInstr(Instr::createBrInstr(BrInstr(ifandend)));
   Register r2 = registerData.getLastRegister();
   initBlock(ifandend);
   addPhiCase(ifandend, r1, actBlock, ifandend);
-  registerData.getLastRegister() = addPhiCase(ifandend, r2, ifandcond2, ifandend);
+  registerData.getLastRegister() = addPhiCase(ifandend, r2, actBlock2, ifandend);
 }
 
 void CodeBuilder::visitEOr(EOr *eor)
@@ -729,11 +749,12 @@ void CodeBuilder::visitEOr(EOr *eor)
   Register r1 = registerData.getLastRegister();
   initBlock(iforcond2);
   eor->expr_2->accept(this);
+  AnsiString actBlock2 = actBlocks[actBlocks.Size()-1].getName();
   addInstr(Instr::createBrInstr(BrInstr(iforend)));
   Register r2 = registerData.getLastRegister();
   initBlock(iforend);
   addPhiCase(iforend, r1, actBlock, iforend);
-  registerData.getLastRegister() = addPhiCase(iforend, r2, iforcond2, iforend);
+  registerData.getLastRegister() = addPhiCase(iforend, r2, actBlock2, iforend);
 }
 
 

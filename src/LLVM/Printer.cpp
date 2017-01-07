@@ -166,10 +166,28 @@ AnsiString Printer::renderReturnInstr(const ReturnInstr& ret) {
 
 AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation) {
   AnsiString ret;
-  ret += renderRegister(operation.getOutReg()) + " = ";
-  ret += renderBinaryOperator(operation.getBop()) + " " + renderRegisterKind(operation.getKind()) + " ";
-  ret += renderBinaryOperationArgument(operation.getLArg()) + ", ";
-  ret += renderBinaryOperationArgument(operation.getRArg());
+  
+  if(!operation.getBop().isMod()) {
+    ret += renderRegister(operation.getOutReg()) + " = ";
+    ret += renderBinaryOperator(operation.getBop()) + " " + renderRegisterKind(operation.getKind()) + " ";
+    ret += renderBinaryOperationArgument(operation.getLArg()) + ", ";
+    ret += renderBinaryOperationArgument(operation.getRArg());
+  } else {
+    //TODO dodać do generatora
+    AnsiString pomReg1 = "%srem" + AnsiString(operation.getOutReg().getId()) + "_1";
+    AnsiString pomReg2 = "%srem" + AnsiString(operation.getOutReg().getId()) + "_2";
+    AnsiString pomReg3 = "%srem" + AnsiString(operation.getOutReg().getId()) + "_3";
+    AnsiString pomReg4 = "%srem" + AnsiString(operation.getOutReg().getId()) + "_4";
+    ret += "  " + pomReg1 + " = alloca i32, align 4\n";
+    ret += "  " + pomReg2 + " = alloca i32, align 4\n";
+    ret += "  store i32 " + renderBinaryOperationArgument(operation.getLArg()) + ", i32* " + pomReg1 + ", align 4\n";
+    ret += "  store i32 " + renderBinaryOperationArgument(operation.getRArg()) + ", i32* " + pomReg2 + ", align 4\n";
+    ret += "  " + pomReg3 + " = load i32* " + pomReg1 +", align 4\n";
+    ret += "  " + pomReg4 + " = load i32* " + pomReg2 +", align 4\n";
+    ret += "  " + renderRegister(operation.getOutReg()) + " = srem i32 " + pomReg3 + ", " + pomReg4;
+
+  }
+  
   return ret;
 }
 
@@ -216,13 +234,13 @@ AnsiString Printer::renderBinaryOperator(const BinaryOperator& binaryOperator) {
   } else if (binaryOperator.isMul()) {
     return "mul";
   } else if (binaryOperator.isLth()) {
-    return "icmp ult";
+    return "icmp slt";
   } else if (binaryOperator.isLe()) {
-    return "icmp ule";
+    return "icmp sle";
   } else if (binaryOperator.isGth()) {
-    return "icmp ugt";
+    return "icmp sgt";
   } else if (binaryOperator.isGe()) {
-    return "icmp uge";
+    return "icmp sge";
   } else if (binaryOperator.isEqu()) {
     return "icmp eq";
   } else if (binaryOperator.isNe()) {
