@@ -34,6 +34,15 @@ char* concatenate(char* s1, char* s2) {
   return ret;
 }
 
+struct RT {
+  int lenght;
+  int* tab;
+};
+
+void s(int* s) {
+  RT r;
+  r.tab[5] = 12;
+}
 
 int tab() {
   int x[4];

@@ -7,10 +7,34 @@ basic
 string 
 basic
 
+RegisterKind
+external
+Register.h
+
 BuilderEnviromentElement = record {
 	ident : string,
 	storeId : int
 }
 
-BuilderEnviroment = array of BuilderEnviromentElement
+BuilderEnviromentElementArray = array of BuilderEnviromentElement
+
+BuilderEnviromentStructElem = record {
+	name : string,
+	kind : RegisterKind
+}
+
+BuilderEnviromentStructElemArray = array of BuilderEnviromentStructElem
+
+BuilderEnviromentStruct = record {
+	name : string,
+	elems : BuilderEnviromentStructElemArray
+}
+
+BuilderEnviromentStructArray = array of BuilderEnviromentStruct
+
+BuilderEnviroment = record {
+  idents : BuilderEnviromentElementArray,
+  structs : BuilderEnviromentStructArray
+}
+
 

@@ -89,21 +89,18 @@ public:
 };
 //----------------------------------
 
-//------------- ArrayObject ---------------
-class ArrayObject {
-  RegisterKind kind;
-  Register pointer;
+//------------- StructObject ---------------
+#include "DynSet.h"
+
+
+class StructObject : public DynSet<Register> {
 public:
-  ArrayObject(const RegisterKind&, const Register&);
-  virtual const RegisterKind& getKind() const;
-  virtual const Register& getPointer() const;
-  virtual RegisterKind& getKind();
-  virtual Register& getPointer();
+  StructObject();
 
   virtual AnsiString toJSON() const;
-  static ArrayObject fromJSON(AnsiString);
+  static StructObject fromJSON(AnsiString);
 
-  virtual ~ArrayObject();
+  virtual ~StructObject();
 
 };
 //----------------------------------
@@ -116,6 +113,7 @@ class Object {
   static const int _TypeBasic;
   static const int _TypeFunction;
   static const int _TypeArray;
+  static const int _TypeStruct;
 
   virtual void init(int, void*);
   virtual void clean();
@@ -127,13 +125,16 @@ public:
   virtual bool isBasic() const;
   virtual bool isFunction() const;
   virtual bool isArray() const;
+  virtual bool isStruct() const;
 
   virtual const BasicObject& asBasic() const;
   virtual BasicObject& asBasic();
   virtual const FunctionObject& asFunction() const;
   virtual FunctionObject& asFunction();
-  virtual const ArrayObject& asArray() const;
-  virtual ArrayObject& asArray();
+  virtual const Register& asArray() const;
+  virtual Register& asArray();
+  virtual const Register& asStruct() const;
+  virtual Register& asStruct();
 
   virtual AnsiString toJSON() const;
   static Object fromJSON(AnsiString);
@@ -142,7 +143,8 @@ public:
 
   static Object createBasic(const BasicObject&);
   static Object createFunction(const FunctionObject&);
-  static Object createArray(const ArrayObject&);
+  static Object createArray(const Register&);
+  static Object createStruct(const Register&);
 
 };
 //----------------------------------

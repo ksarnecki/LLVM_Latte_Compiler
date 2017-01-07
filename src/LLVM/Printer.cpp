@@ -13,6 +13,10 @@ AnsiString Printer::renderRegisterKind(const RegisterKind& kind) {
     return "i8";
   if(kind.isValueI32())
     return "i32";
+  if(kind.isStruct())
+    return "%struct." + kind.asStruct();
+  if(kind.isConstPtr())
+    return "[ " + AnsiString(kind.asConstPtr().getCount()) + " x " + renderRegisterKind(kind.asConstPtr().getKind()) + "]*";
   throw Exception("[Printer::renderRegisterKind] Unsupported register kind.");
 }
 
@@ -50,7 +54,17 @@ void Printer::print(const LLVMProgram& program) {
   pre += "declare i8* @concatenate(i8*, i8*)\n";
 
   for(int i=0;i<program.getStrings().Size();i++)
-    pre += "@.str"+AnsiString(i)+" = private unnamed_addr constant ["+AnsiString(program.getStrings()[i].Length()+1)+" x i8] c\""+program.getStrings()[i]+"\\00\", align 1\n";
+    pre += "@.str"+AnsiString(program.getStrings()[i].getId())+" = private unnamed_addr constant ["+AnsiString(program.getStrings()[i].getValue().Length()+1)+" x i8] c\""+program.getStrings()[i].getValue()+"\\00\", align 1\n";
+
+  for(int i=0;i<program.getStructs().Size();i++) {
+    pre += "%struct." + program.getStructs()[i].getName() + " = type { ";
+    for(int j=0;j<program.getStructs()[i].getElems().Size();j++) {
+      if(j>0)
+        pre += ", ";
+      pre += renderRegisterKind(program.getStructs()[i].getElems()[j]) + " ";
+    }
+    pre += "}\n";
+  }
 
   printf("%s", pre.c_str());
 
@@ -144,8 +158,10 @@ AnsiString Printer::renderBrIfInstr(const BrIfInstr& br) {
   return "br i1 " + renderRegister(br.getCond()) + ", label %" + br.getIfTrueBlock() + ", label %" + br.getIfFalseBlock();
 }
 
-AnsiString Printer::renderReturnInstr(const Register& ret) {
-  return "ret " + renderRegisterKind(ret.getKind()) + " " + renderRegister(ret);
+AnsiString Printer::renderReturnInstr(const ReturnInstr& ret) {
+  if(ret.isValue())
+    return "ret " + renderRegisterKind(ret.asValue().getKind()) + " " + renderRegister(ret.asValue());
+  return "ret void";
 }
 
 AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation) {
@@ -225,5 +241,9 @@ AnsiString Printer::renderBinaryOperationArgument(const BinaryOperationArgument&
 }
 
 AnsiString Printer::renderRegister(const Register& r) {
+  if(r.getPlain().isTrue())
+    return r.getPlain().asTrue();
+  if(r.getKind().isConstPtr())
+    return "@.str" + AnsiString(r.getId());
   return "%reg_" + AnsiString(r.getId());
 }

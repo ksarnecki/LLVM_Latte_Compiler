@@ -12,8 +12,10 @@ void Opt::o0ReturnDeadCode(LLVMProgram& program) {
       for(int k=0;k<b.getBody().Size();k++) {
         Instr& instr = b.getBody()[k];
         newb.getBody().Insert(instr);
-        if(instr.isReturnInstr())
+        if(instr.isReturnInstr()) {
+          //printf("Return! At %d from %d]\n", k, b.getBody().Size());
           break;
+        }
         if(instr.isBrInstr()) {
           std::string name = instr.asBrInstr().getBlock().c_str();
           if(refCounter.find(name)==refCounter.end()) {

@@ -21,6 +21,9 @@
 //------------- RegisterArray ---------------
 //----------------------------------
 
+//------------- RegisterKindArray ---------------
+//----------------------------------
+
 //------------- StringArray ---------------
 StringArray::StringArray() {
 }
@@ -1528,6 +1531,119 @@ GetElementPtrInstr::~GetElementPtrInstr() {
 }
 //----------------------------------
 
+//------------- ReturnInstr ---------------
+const int ReturnInstr::_TypeValue = 0;
+const int ReturnInstr::_TypeEmpty = 1;
+void ReturnInstr::init(int type, void* ptr) {
+  if (type==_TypeValue) {
+    _type = type;
+    _ptr = new Register(*(Register*) ptr);
+  } else if (type==_TypeEmpty) {
+    _type = type;
+    _ptr = 0;
+  }
+}
+void ReturnInstr::clean() {
+  if (_type==_TypeValue) {
+    _type = -1;
+    delete (Register*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeEmpty) {
+    _type = -1;
+    if (_ptr!=0)
+      throw Exception("ReturnInstr::clean()");
+  }
+}
+ReturnInstr::ReturnInstr() : _type(-1), _ptr(0) {
+}
+ReturnInstr::ReturnInstr(const ReturnInstr& _value) {
+  init(_value._type, _value._ptr);
+}
+ReturnInstr& ReturnInstr::operator=(const ReturnInstr& _value) {
+  clean();
+  init(_value._type, _value._ptr);
+  return *this;
+}
+bool ReturnInstr::isValue() const {
+  return _type==_TypeValue;
+}
+bool ReturnInstr::isEmpty() const {
+  return _type==_TypeEmpty;
+}
+const Register& ReturnInstr::asValue() const {
+  if (_type!=_TypeValue)
+    throw Exception("ReturnInstr::asValue");
+  return *(Register*) _ptr;
+}
+Register& ReturnInstr::asValue() {
+  if (_type!=_TypeValue)
+    throw Exception("ReturnInstr::asValue");
+  return *(Register*) _ptr;
+}
+
+AnsiString ReturnInstr::toJSON() const {
+  StringBuffer _json;
+   _json += "{\"type\":" + AnsiString(_type) + ",\"value\":";
+    if (_type==0)
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==1)
+      _json += "0";
+    else
+      throw Exception("ReturnInstr::toJSON(" + AnsiString(_type) + ")");
+    _json += "}";
+    return _json.get();
+}
+ReturnInstr ReturnInstr::fromJSON(AnsiString s) {
+  int ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length()) 
+    throw Exception("ReturnInstr::fromJSON");
+  if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("0")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("ReturnInstr::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return ReturnInstr::createValue(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("1")) {
+    return ReturnInstr::createEmpty();
+  }
+  AnsiString variantName = "";
+  ix = 1;
+  while (ix<=s.Length() && s[ix]!=':')
+    ix++;
+  if (ix>s.Length() || ix<=4) 
+    throw Exception("ReturnInstr::fromJSON");
+  variantName = s.SubString(3, ix-4);
+  if (variantName==("value")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("ReturnInstr::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return ReturnInstr::createValue(Register::fromJSON(s));
+  } else if (variantName==("empty")) {
+    return ReturnInstr::createEmpty();
+  } else 
+    throw Exception("ReturnInstr::fromJSON");
+}
+
+ReturnInstr::~ReturnInstr() {
+  clean();
+}
+ReturnInstr ReturnInstr::createValue(const Register& _param) {
+  ReturnInstr _value;
+  _value._type = _TypeValue;
+  _value._ptr = new Register(_param);
+  return _value;
+}
+ReturnInstr ReturnInstr::createEmpty() {
+  ReturnInstr _value;
+  _value._type = _TypeEmpty;
+  _value._ptr = 0;
+  return _value;
+}
+
+
+//----------------------------------
+
 //------------- Instr ---------------
 const int Instr::_TypeBinaryOperationInstr = 0;
 const int Instr::_TypeCallInstr = 1;
@@ -1553,7 +1669,7 @@ void Instr::init(int type, void* ptr) {
     _ptr = new PhiInstr(*(PhiInstr*) ptr);
   } else if (type==_TypeReturnInstr) {
     _type = type;
-    _ptr = new Register(*(Register*) ptr);
+    _ptr = new ReturnInstr(*(ReturnInstr*) ptr);
   } else if (type==_TypeBrInstr) {
     _type = type;
     _ptr = new BrInstr(*(BrInstr*) ptr);
@@ -1595,7 +1711,7 @@ void Instr::clean() {
     _ptr = 0;
   } else if (_type==_TypeReturnInstr) {
     _type = -1;
-    delete (Register*) _ptr;
+    delete (ReturnInstr*) _ptr;
     _ptr = 0;
   } else if (_type==_TypeBrInstr) {
     _type = -1;
@@ -1707,15 +1823,15 @@ PhiInstr& Instr::asPhiInstr() {
     throw Exception("Instr::asPhiInstr");
   return *(PhiInstr*) _ptr;
 }
-const Register& Instr::asReturnInstr() const {
+const ReturnInstr& Instr::asReturnInstr() const {
   if (_type!=_TypeReturnInstr)
     throw Exception("Instr::asReturnInstr");
-  return *(Register*) _ptr;
+  return *(ReturnInstr*) _ptr;
 }
-Register& Instr::asReturnInstr() {
+ReturnInstr& Instr::asReturnInstr() {
   if (_type!=_TypeReturnInstr)
     throw Exception("Instr::asReturnInstr");
-  return *(Register*) _ptr;
+  return *(ReturnInstr*) _ptr;
 }
 const BrInstr& Instr::asBrInstr() const {
   if (_type!=_TypeBrInstr)
@@ -1808,7 +1924,7 @@ AnsiString Instr::toJSON() const {
     else if (_type==2)
     _json += ((PhiInstr*) _ptr)->toJSON();
     else if (_type==3)
-    _json += ((Register*) _ptr)->toJSON();
+    _json += ((ReturnInstr*) _ptr)->toJSON();
     else if (_type==4)
     _json += ((BrInstr*) _ptr)->toJSON();
     else if (_type==5)
@@ -1855,7 +1971,7 @@ Instr Instr::fromJSON(AnsiString s) {
     if (s.Length()-ix-10-1<=0)
       throw Exception("Instr::fromJSON");
     s = s.SubString(ix+10+1, s.Length()-ix-10-1);
-    return Instr::createReturnInstr(Register::fromJSON(s));
+    return Instr::createReturnInstr(ReturnInstr::fromJSON(s));
   } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
     if (s.Length()-ix-10-1<=0)
       throw Exception("Instr::fromJSON");
@@ -1923,7 +2039,7 @@ Instr Instr::fromJSON(AnsiString s) {
     if (s.Length()-ix-1<=0)
       throw Exception("Instr::fromJSON");
     s = s.SubString(ix+1, s.Length()-ix-1);
-    return Instr::createReturnInstr(Register::fromJSON(s));
+    return Instr::createReturnInstr(ReturnInstr::fromJSON(s));
   } else if (variantName==("brInstr")) {
     if (s.Length()-ix-1<=0)
       throw Exception("Instr::fromJSON");
@@ -1989,10 +2105,10 @@ Instr Instr::createPhiInstr(const PhiInstr& _param) {
   _value._ptr = new PhiInstr(_param);
   return _value;
 }
-Instr Instr::createReturnInstr(const Register& _param) {
+Instr Instr::createReturnInstr(const ReturnInstr& _param) {
   Instr _value;
   _value._type = _TypeReturnInstr;
-  _value._ptr = new Register(_param);
+  _value._ptr = new ReturnInstr(_param);
   return _value;
 }
 Instr Instr::createBrInstr(const BrInstr& _param) {
@@ -2610,8 +2726,258 @@ LLVMFunctionArray::~LLVMFunctionArray() {
 }
 //----------------------------------
 
+//------------- LLVMConstString ---------------
+LLVMConstString::LLVMConstString(const int& _id, const AnsiString& _value) : id(_id), value(_value) {
+}
+const int& LLVMConstString::getId() const {
+  return id;
+}
+int& LLVMConstString::getId() {
+  return id;
+}
+const AnsiString& LLVMConstString::getValue() const {
+  return value;
+}
+AnsiString& LLVMConstString::getValue() {
+  return value;
+}
+AnsiString LLVMConstString::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"id\":";
+    _json += AnsiString(id);
+    _json += ",";
+    _json += "\"value\":";
+    _json += "\"" + JSONEscape::encode(value) + "\"";
+  _json += "}";
+  return _json.get();
+}
+LLVMConstString LLVMConstString::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("LLVMConstString::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("LLVMConstString::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return LLVMConstString(atoi(arr[0].c_str()), (arr[1].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[1].SubString(2, arr[1].Length()-2))));
+}
+LLVMConstString::~LLVMConstString() {
+}
+//----------------------------------
+
+//------------- LLVMConstStringArray ---------------
+LLVMConstStringArray::LLVMConstStringArray() {
+}
+AnsiString LLVMConstStringArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+LLVMConstStringArray LLVMConstStringArray::fromJSON(AnsiString s) {
+  LLVMConstStringArray arr = LLVMConstStringArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("LLVMConstStringArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("LLVMConstStringArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(LLVMConstString::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
+}
+LLVMConstStringArray::~LLVMConstStringArray() {
+}
+//----------------------------------
+
+//------------- LLVMStruct ---------------
+LLVMStruct::LLVMStruct(const AnsiString& _name, const RegisterKindArray& _elems) : name(_name), elems(_elems) {
+}
+const AnsiString& LLVMStruct::getName() const {
+  return name;
+}
+AnsiString& LLVMStruct::getName() {
+  return name;
+}
+const RegisterKindArray& LLVMStruct::getElems() const {
+  return elems;
+}
+RegisterKindArray& LLVMStruct::getElems() {
+  return elems;
+}
+AnsiString LLVMStruct::toJSON() const {
+  StringBuffer _json;
+  _json += "{";
+    _json += "\"name\":";
+    _json += "\"" + JSONEscape::encode(name) + "\"";
+    _json += ",";
+    _json += "\"elems\":";
+    _json += elems.toJSON();
+  _json += "}";
+  return _json.get();
+}
+LLVMStruct LLVMStruct::fromJSON(AnsiString s) {
+  AnsiString arr[2];
+  int ix=1;
+  for (int i=0;i<2;i++) {
+    while (ix<=s.Length() && s[ix]!=':')
+      ix++;
+    if (ix>s.Length()) 
+      throw Exception("LLVMStruct::fromJSON");
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
+        if (i<2) {
+          if (ix-start-1<=0)
+            throw Exception("LLVMStruct::fromJSON");
+          arr[i] = s.SubString(start+1, ix-start-1);
+        }
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return LLVMStruct((arr[0].Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(arr[0].SubString(2, arr[0].Length()-2))), RegisterKindArray::fromJSON(arr[1]));
+}
+LLVMStruct::~LLVMStruct() {
+}
+//----------------------------------
+
+//------------- LLVMStructElementArray ---------------
+LLVMStructElementArray::LLVMStructElementArray() {
+}
+AnsiString LLVMStructElementArray::toJSON() const {
+  StringBuffer _json;
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
+}
+LLVMStructElementArray LLVMStructElementArray::fromJSON(AnsiString s) {
+  LLVMStructElementArray arr = LLVMStructElementArray();
+  int ix=1;
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("LLVMStructElementArray::fromJSON");
+  while (ix<=s.Length()) {
+    int start = ix;
+    bool inString = false;
+    int bracketLevel = 0;
+    while (ix<=s.Length()) {
+      if (s[ix]=='\\')
+        ix+=2;
+      else if (s[ix]=='"')
+        inString = !inString;
+      else if (!inString && s[ix]=='[')
+        bracketLevel++;
+      else if (!inString && s[ix]=='{')
+        bracketLevel++;
+      else if (!inString && s[ix]==']')
+        bracketLevel--;
+      else if (!inString && s[ix]=='}')
+        bracketLevel--;
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("LLVMStructElementArray::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(LLVMStruct::fromJSON(tmp));
+        ix++;
+        break;
+      }
+      ix++;
+    }
+  }
+  return arr;
+}
+LLVMStructElementArray::~LLVMStructElementArray() {
+}
+//----------------------------------
+
 //------------- LLVMProgram ---------------
-LLVMProgram::LLVMProgram(const LLVMFunctionArray& _functions, const StringArray& _strings) : functions(_functions), strings(_strings) {
+LLVMProgram::LLVMProgram(const LLVMFunctionArray& _functions, const LLVMConstStringArray& _strings, const LLVMStructElementArray& _structs) : functions(_functions), strings(_strings), structs(_structs) {
 }
 const LLVMFunctionArray& LLVMProgram::getFunctions() const {
   return functions;
@@ -2619,11 +2985,17 @@ const LLVMFunctionArray& LLVMProgram::getFunctions() const {
 LLVMFunctionArray& LLVMProgram::getFunctions() {
   return functions;
 }
-const StringArray& LLVMProgram::getStrings() const {
+const LLVMConstStringArray& LLVMProgram::getStrings() const {
   return strings;
 }
-StringArray& LLVMProgram::getStrings() {
+LLVMConstStringArray& LLVMProgram::getStrings() {
   return strings;
+}
+const LLVMStructElementArray& LLVMProgram::getStructs() const {
+  return structs;
+}
+LLVMStructElementArray& LLVMProgram::getStructs() {
+  return structs;
 }
 AnsiString LLVMProgram::toJSON() const {
   StringBuffer _json;
@@ -2633,13 +3005,16 @@ AnsiString LLVMProgram::toJSON() const {
     _json += ",";
     _json += "\"strings\":";
     _json += strings.toJSON();
+    _json += ",";
+    _json += "\"structs\":";
+    _json += structs.toJSON();
   _json += "}";
   return _json.get();
 }
 LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
-  AnsiString arr[2];
+  AnsiString arr[3];
   int ix=1;
-  for (int i=0;i<2;i++) {
+  for (int i=0;i<3;i++) {
     while (ix<=s.Length() && s[ix]!=':')
       ix++;
     if (ix>s.Length()) 
@@ -2661,7 +3036,7 @@ LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
       else if (!inString && s[ix]=='}')
         bracketLevel--;
       if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
-        if (i<2) {
+        if (i<3) {
           if (ix-start-1<=0)
             throw Exception("LLVMProgram::fromJSON");
           arr[i] = s.SubString(start+1, ix-start-1);
@@ -2672,7 +3047,7 @@ LLVMProgram LLVMProgram::fromJSON(AnsiString s) {
       ix++;
     }
   }
-  return LLVMProgram(LLVMFunctionArray::fromJSON(arr[0]), StringArray::fromJSON(arr[1]));
+  return LLVMProgram(LLVMFunctionArray::fromJSON(arr[0]), LLVMConstStringArray::fromJSON(arr[1]), LLVMStructElementArray::fromJSON(arr[2]));
 }
 LLVMProgram::~LLVMProgram() {
 }

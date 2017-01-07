@@ -13,18 +13,35 @@ Absyn.H
 
 RegisterArray = array of Register
 
+ConstPtrArray = array of ConstPtr
+
+RegisterKindArray = array of RegisterKind
+
 RegisterKind = variant {
 	valueI1,
 	valueI8,
 	valueI32,
 	valueDouble,
-	ptr : RegisterKind, 
+	ptr : RegisterKind,
+	constPtr : ConstPtr,
+	struct: string,
 	null
+}
+
+ConstPtr = record {
+  kind : RegisterKind,
+  count : int
+}
+
+RegisterPlain = variant {
+	true : string,
+	false
 }
 
 Register = record {
     id : int,
-	kind : RegisterKind
+	kind : RegisterKind,
+	plain : RegisterPlain
 }
 
 Registers = array of Register

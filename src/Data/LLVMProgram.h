@@ -26,6 +26,10 @@
 #include "Register.h"
 //----------------------------------
 
+//------------- RegisterKindArray ---------------
+#include "Register.h"
+//----------------------------------
+
 //------------- StringArray ---------------
 #include "DynSet.h"
 
@@ -421,6 +425,38 @@ public:
 };
 //----------------------------------
 
+//------------- ReturnInstr ---------------
+class ReturnInstr {
+  int _type;
+  void* _ptr;
+
+  static const int _TypeValue;
+  static const int _TypeEmpty;
+
+  virtual void init(int, void*);
+  virtual void clean();
+  ReturnInstr();
+public:
+  ReturnInstr(const ReturnInstr&);
+  virtual ReturnInstr& operator=(const ReturnInstr&);
+
+  virtual bool isValue() const;
+  virtual bool isEmpty() const;
+
+  virtual const Register& asValue() const;
+  virtual Register& asValue();
+
+  virtual AnsiString toJSON() const;
+  static ReturnInstr fromJSON(AnsiString);
+
+  virtual ~ReturnInstr();
+
+  static ReturnInstr createValue(const Register&);
+  static ReturnInstr createEmpty();
+
+};
+//----------------------------------
+
 //------------- Instr ---------------
 class Instr {
   int _type;
@@ -465,8 +501,8 @@ public:
   virtual CallInstr& asCallInstr();
   virtual const PhiInstr& asPhiInstr() const;
   virtual PhiInstr& asPhiInstr();
-  virtual const Register& asReturnInstr() const;
-  virtual Register& asReturnInstr();
+  virtual const ReturnInstr& asReturnInstr() const;
+  virtual ReturnInstr& asReturnInstr();
   virtual const BrInstr& asBrInstr() const;
   virtual BrInstr& asBrInstr();
   virtual const BrIfInstr& asBrIfInstr() const;
@@ -492,7 +528,7 @@ public:
   static Instr createBinaryOperationInstr(const BinaryOperation&);
   static Instr createCallInstr(const CallInstr&);
   static Instr createPhiInstr(const PhiInstr&);
-  static Instr createReturnInstr(const Register&);
+  static Instr createReturnInstr(const ReturnInstr&);
   static Instr createBrInstr(const BrInstr&);
   static Instr createBrIfInstr(const BrIfInstr&);
   static Instr createPrintInstr(const Register&);
@@ -664,16 +700,89 @@ public:
 };
 //----------------------------------
 
+//------------- LLVMConstString ---------------
+class LLVMConstString {
+  int id;
+  AnsiString value;
+public:
+  LLVMConstString(const int&, const AnsiString&);
+  virtual const int& getId() const;
+  virtual const AnsiString& getValue() const;
+  virtual int& getId();
+  virtual AnsiString& getValue();
+
+  virtual AnsiString toJSON() const;
+  static LLVMConstString fromJSON(AnsiString);
+
+  virtual ~LLVMConstString();
+
+};
+//----------------------------------
+
+//------------- LLVMConstStringArray ---------------
+#include "DynSet.h"
+
+
+class LLVMConstStringArray : public DynSet<LLVMConstString> {
+public:
+  LLVMConstStringArray();
+
+  virtual AnsiString toJSON() const;
+  static LLVMConstStringArray fromJSON(AnsiString);
+
+  virtual ~LLVMConstStringArray();
+
+};
+//----------------------------------
+
+//------------- LLVMStruct ---------------
+class LLVMStruct {
+  AnsiString name;
+  RegisterKindArray elems;
+public:
+  LLVMStruct(const AnsiString&, const RegisterKindArray&);
+  virtual const AnsiString& getName() const;
+  virtual const RegisterKindArray& getElems() const;
+  virtual AnsiString& getName();
+  virtual RegisterKindArray& getElems();
+
+  virtual AnsiString toJSON() const;
+  static LLVMStruct fromJSON(AnsiString);
+
+  virtual ~LLVMStruct();
+
+};
+//----------------------------------
+
+//------------- LLVMStructElementArray ---------------
+#include "DynSet.h"
+
+
+class LLVMStructElementArray : public DynSet<LLVMStruct> {
+public:
+  LLVMStructElementArray();
+
+  virtual AnsiString toJSON() const;
+  static LLVMStructElementArray fromJSON(AnsiString);
+
+  virtual ~LLVMStructElementArray();
+
+};
+//----------------------------------
+
 //------------- LLVMProgram ---------------
 class LLVMProgram {
   LLVMFunctionArray functions;
-  StringArray strings;
+  LLVMConstStringArray strings;
+  LLVMStructElementArray structs;
 public:
-  LLVMProgram(const LLVMFunctionArray&, const StringArray&);
+  LLVMProgram(const LLVMFunctionArray&, const LLVMConstStringArray&, const LLVMStructElementArray&);
   virtual const LLVMFunctionArray& getFunctions() const;
-  virtual const StringArray& getStrings() const;
+  virtual const LLVMConstStringArray& getStrings() const;
+  virtual const LLVMStructElementArray& getStructs() const;
   virtual LLVMFunctionArray& getFunctions();
-  virtual StringArray& getStrings();
+  virtual LLVMConstStringArray& getStrings();
+  virtual LLVMStructElementArray& getStructs();
 
   virtual AnsiString toJSON() const;
   static LLVMProgram fromJSON(AnsiString);

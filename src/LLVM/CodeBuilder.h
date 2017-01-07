@@ -10,11 +10,11 @@
 class CodeBuilder : public Visitor
 {
 private:
-  RegisterData registerData = RegisterData(Register(-1, RegisterKind::createNull()), Registers());
+  RegisterData registerData = RegisterData(Register(-1, RegisterKind::createNull(), RegisterPlain::createFalse()), Registers());
   Store store;
-  BuilderEnviroment enviroment;
+  BuilderEnviroment enviroment = BuilderEnviroment(BuilderEnviromentElementArray(), BuilderEnviromentStructArray());
   LLVMBlockArray actBlocks;
-  LLVMProgram program = LLVMProgram(LLVMFunctionArray(), StringArray());
+  LLVMProgram program = LLVMProgram(LLVMFunctionArray(), LLVMConstStringArray(), LLVMStructElementArray());
 
 public:
   void visitProgram(Program* p);
@@ -113,7 +113,7 @@ public:
     LLVMFunctionType type6 = LLVMFunctionType::createObj(RegisterKind::createPtr(RegisterKind::createValueI8()));
     Object o6 = Object::createFunction(FunctionObject(type6));
     updateEnviroment("concatenate", o6);
-    
+
     //InstrArray readIntInstrs;
     //readIntInstrs.Insert(Instr::createAlloca(getNextRegister(RegisterKind::createValueI32())));
     /*
@@ -135,6 +135,7 @@ public:
 
   //pomocnicze
   Register getNextRegister(const RegisterKind);
+  Register getNextPlainRegister(const RegisterKind, AnsiString);
   RegisterKind getBinaryOperationRegisterKind(const Register&, const Register&);
   RegisterKind getRegisterKindFromLatteType(const LatteType*);
   Object getNextObjectByLatteType(const LatteType*);
@@ -158,6 +159,10 @@ public:
 
   Register getRegisterByObject(const Object&);
   Register getRegisterByIdent(const AnsiString&);
+
+  void initArray(const LatteType*, AnsiString);
+  Register getArrayPtr(const Register&);
+  Register getArraySizePtr(const Register&);
 };
 
 

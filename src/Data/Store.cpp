@@ -254,40 +254,28 @@ FunctionObject::~FunctionObject() {
 }
 //----------------------------------
 
-//------------- ArrayObject ---------------
-ArrayObject::ArrayObject(const RegisterKind& _kind, const Register& _pointer) : kind(_kind), pointer(_pointer) {
+//------------- StructObject ---------------
+StructObject::StructObject() {
 }
-const RegisterKind& ArrayObject::getKind() const {
-  return kind;
-}
-RegisterKind& ArrayObject::getKind() {
-  return kind;
-}
-const Register& ArrayObject::getPointer() const {
-  return pointer;
-}
-Register& ArrayObject::getPointer() {
-  return pointer;
-}
-AnsiString ArrayObject::toJSON() const {
+AnsiString StructObject::toJSON() const {
   StringBuffer _json;
-  _json += "{";
-    _json += "\"kind\":";
-    _json += kind.toJSON();
-    _json += ",";
-    _json += "\"pointer\":";
-    _json += pointer.toJSON();
-  _json += "}";
-  return _json.get();
+  _json += "[";
+  for (int _i=0;_i<Size();_i++) {
+    if (_i!=0) _json += ",";
+    _json += (*this)[_i].toJSON();
+  }
+    _json += "]";
+    return _json.get();
 }
-ArrayObject ArrayObject::fromJSON(AnsiString s) {
-  AnsiString arr[2];
+StructObject StructObject::fromJSON(AnsiString s) {
+  StructObject arr = StructObject();
   int ix=1;
-  for (int i=0;i<2;i++) {
-    while (ix<=s.Length() && s[ix]!=':')
-      ix++;
-    if (ix>s.Length()) 
-      throw Exception("ArrayObject::fromJSON");
+  while(ix <= s.Length() && s[ix]!='[')
+    ix++;
+  ix++;
+  if (ix>s.Length()) 
+    throw Exception("StructObject::fromJSON");
+  while (ix<=s.Length()) {
     int start = ix;
     bool inString = false;
     int bracketLevel = 0;
@@ -304,21 +292,22 @@ ArrayObject ArrayObject::fromJSON(AnsiString s) {
         bracketLevel--;
       else if (!inString && s[ix]=='}')
         bracketLevel--;
-      if (bracketLevel<=0 && !inString && ((ix<=s.Length() && s[ix]==',') || ix==s.Length())) {
-        if (i<2) {
-          if (ix-start-1<=0)
-            throw Exception("ArrayObject::fromJSON");
-          arr[i] = s.SubString(start+1, ix-start-1);
-        }
+      if (bracketLevel<=0 && !inString && (s[ix]==',' || ix==s.Length())) {
+        if (start==ix)
+          return arr;
+        if (ix-start<=0)
+          throw Exception("StructObject::fromJSON");
+        AnsiString tmp = s.SubString(start, ix-start);
+        arr.Insert(Register::fromJSON(tmp));
         ix++;
         break;
       }
       ix++;
     }
   }
-  return ArrayObject(RegisterKind::fromJSON(arr[0]), Register::fromJSON(arr[1]));
+  return arr;
 }
-ArrayObject::~ArrayObject() {
+StructObject::~StructObject() {
 }
 //----------------------------------
 
@@ -326,6 +315,7 @@ ArrayObject::~ArrayObject() {
 const int Object::_TypeBasic = 0;
 const int Object::_TypeFunction = 1;
 const int Object::_TypeArray = 2;
+const int Object::_TypeStruct = 3;
 void Object::init(int type, void* ptr) {
   if (type==_TypeBasic) {
     _type = type;
@@ -335,7 +325,10 @@ void Object::init(int type, void* ptr) {
     _ptr = new FunctionObject(*(FunctionObject*) ptr);
   } else if (type==_TypeArray) {
     _type = type;
-    _ptr = new ArrayObject(*(ArrayObject*) ptr);
+    _ptr = new Register(*(Register*) ptr);
+  } else if (type==_TypeStruct) {
+    _type = type;
+    _ptr = new Register(*(Register*) ptr);
   }
 }
 void Object::clean() {
@@ -349,7 +342,11 @@ void Object::clean() {
     _ptr = 0;
   } else if (_type==_TypeArray) {
     _type = -1;
-    delete (ArrayObject*) _ptr;
+    delete (Register*) _ptr;
+    _ptr = 0;
+  } else if (_type==_TypeStruct) {
+    _type = -1;
+    delete (Register*) _ptr;
     _ptr = 0;
   }
 }
@@ -372,6 +369,9 @@ bool Object::isFunction() const {
 bool Object::isArray() const {
   return _type==_TypeArray;
 }
+bool Object::isStruct() const {
+  return _type==_TypeStruct;
+}
 const BasicObject& Object::asBasic() const {
   if (_type!=_TypeBasic)
     throw Exception("Object::asBasic");
@@ -392,15 +392,25 @@ FunctionObject& Object::asFunction() {
     throw Exception("Object::asFunction");
   return *(FunctionObject*) _ptr;
 }
-const ArrayObject& Object::asArray() const {
+const Register& Object::asArray() const {
   if (_type!=_TypeArray)
     throw Exception("Object::asArray");
-  return *(ArrayObject*) _ptr;
+  return *(Register*) _ptr;
 }
-ArrayObject& Object::asArray() {
+Register& Object::asArray() {
   if (_type!=_TypeArray)
     throw Exception("Object::asArray");
-  return *(ArrayObject*) _ptr;
+  return *(Register*) _ptr;
+}
+const Register& Object::asStruct() const {
+  if (_type!=_TypeStruct)
+    throw Exception("Object::asStruct");
+  return *(Register*) _ptr;
+}
+Register& Object::asStruct() {
+  if (_type!=_TypeStruct)
+    throw Exception("Object::asStruct");
+  return *(Register*) _ptr;
 }
 
 AnsiString Object::toJSON() const {
@@ -411,7 +421,9 @@ AnsiString Object::toJSON() const {
     else if (_type==1)
     _json += ((FunctionObject*) _ptr)->toJSON();
     else if (_type==2)
-    _json += ((ArrayObject*) _ptr)->toJSON();
+    _json += ((Register*) _ptr)->toJSON();
+    else if (_type==3)
+    _json += ((Register*) _ptr)->toJSON();
     else
       throw Exception("Object::toJSON(" + AnsiString(_type) + ")");
     _json += "}";
@@ -437,7 +449,12 @@ Object Object::fromJSON(AnsiString s) {
     if (s.Length()-ix-10-1<=0)
       throw Exception("Object::fromJSON");
     s = s.SubString(ix+10+1, s.Length()-ix-10-1);
-    return Object::createArray(ArrayObject::fromJSON(s));
+    return Object::createArray(Register::fromJSON(s));
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
+    if (s.Length()-ix-10-1<=0)
+      throw Exception("Object::fromJSON");
+    s = s.SubString(ix+10+1, s.Length()-ix-10-1);
+    return Object::createStruct(Register::fromJSON(s));
   }
   AnsiString variantName = "";
   ix = 1;
@@ -460,7 +477,12 @@ Object Object::fromJSON(AnsiString s) {
     if (s.Length()-ix-1<=0)
       throw Exception("Object::fromJSON");
     s = s.SubString(ix+1, s.Length()-ix-1);
-    return Object::createArray(ArrayObject::fromJSON(s));
+    return Object::createArray(Register::fromJSON(s));
+  } else if (variantName==("struct")) {
+    if (s.Length()-ix-1<=0)
+      throw Exception("Object::fromJSON");
+    s = s.SubString(ix+1, s.Length()-ix-1);
+    return Object::createStruct(Register::fromJSON(s));
   } else 
     throw Exception("Object::fromJSON");
 }
@@ -480,10 +502,16 @@ Object Object::createFunction(const FunctionObject& _param) {
   _value._ptr = new FunctionObject(_param);
   return _value;
 }
-Object Object::createArray(const ArrayObject& _param) {
+Object Object::createArray(const Register& _param) {
   Object _value;
   _value._type = _TypeArray;
-  _value._ptr = new ArrayObject(_param);
+  _value._ptr = new Register(_param);
+  return _value;
+}
+Object Object::createStruct(const Register& _param) {
+  Object _value;
+  _value._type = _TypeStruct;
+  _value._ptr = new Register(_param);
   return _value;
 }
 

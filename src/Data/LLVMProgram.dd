@@ -23,6 +23,10 @@ RegisterArray
 external
 Register.h
 
+RegisterKindArray
+external
+Register.h
+
 StringArray = array of string
 
 BinaryOperationArgument = variant {
@@ -102,11 +106,16 @@ GetElementPtrInstr = record {
   indexes : RegisterArray
 }
 
+ReturnInstr = variant {
+  value : Register,
+  empty  
+}
+
 Instr = variant {
   binaryOperationInstr : BinaryOperation,
   callInstr : CallInstr,
   phiInstr : PhiInstr,
-  returnInstr : Register,
+  returnInstr : ReturnInstr,
   brInstr : BrInstr,
   brIfInstr : BrIfInstr,
   printInstr : Register,
@@ -147,7 +156,22 @@ LLVMFunction = record {
 
 LLVMFunctionArray = array of LLVMFunction
 
+LLVMConstString = record {
+  id : int,
+  value : string
+}
+
+LLVMConstStringArray = array of LLVMConstString
+
+LLVMStruct = record {
+  name : string,
+  elems : RegisterKindArray
+}
+
+LLVMStructElementArray = array of LLVMStruct
+
 LLVMProgram = record {
   functions : LLVMFunctionArray,
-  strings : StringArray
+  strings : LLVMConstStringArray,
+  structs : LLVMStructElementArray
 }

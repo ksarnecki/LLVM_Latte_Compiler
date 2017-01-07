@@ -42,15 +42,13 @@ FunctionObject = record {
   type : LLVMFunctionType
 }
 
-ArrayObject = record {
-  kind : RegisterKind,
-  pointer : Register
-}
+StructObject = array of Register
 
 Object = variant {
   basic : BasicObject,
   function : FunctionObject,
-  array : ArrayObject
+  array : Register,
+  struct : Register
 }
 
 StoreElement = record {

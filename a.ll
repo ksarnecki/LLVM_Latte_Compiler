@@ -2,6 +2,8 @@
 target datalayout = "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"
 target triple = "i386-pc-linux-gnu"
 
+%struct.RT = type { i32, i32* }
+
 @.str = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 @.str1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 @.str2 = private unnamed_addr constant [7 x i8] c"%1023s\00", align 1
@@ -93,6 +95,18 @@ declare i8* @strcpy(i8*, i8*) #1
 
 ; Function Attrs: nounwind
 declare i8* @strcat(i8*, i8*) #1
+
+; Function Attrs: nounwind
+define void @_Z1sPi(i32* %s) #1 {
+  %1 = alloca i32*, align 4
+  %r = alloca %struct.RT, align 4
+  store i32* %s, i32** %1, align 4
+  %2 = getelementptr inbounds %struct.RT* %r, i32 0, i32 1
+  %3 = load i32** %2, align 4
+  %4 = getelementptr inbounds i32* %3, i32 5
+  store i32 12, i32* %4, align 4
+  ret void
+}
 
 ; Function Attrs: nounwind
 define i32 @_Z3tabv() #1 {

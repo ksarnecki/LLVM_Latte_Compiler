@@ -15,7 +15,7 @@ private:
   static AnsiString renderCallInstr(const CallInstr&);
   static AnsiString renderBrInstr(const BrInstr&);
   static AnsiString renderBrIfInstr(const BrIfInstr&);
-  static AnsiString renderReturnInstr(const Register&);
+  static AnsiString renderReturnInstr(const ReturnInstr&);
   static AnsiString renderPhiInstr(const PhiInstr&);
   static AnsiString renderAllocaInstr(const AllocaInstr&);
   static AnsiString renderLoadInstr(const LoadInstr&);

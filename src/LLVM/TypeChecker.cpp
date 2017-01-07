@@ -50,8 +50,13 @@ void TypeChecker::visitFnDef(FnDef *fndef)
 
   TypeCheckerEnviroment prev = enviroment;
   enviroment = function.asFunction().getEnv();
+
   fndef->block_->accept(this);
   enviroment = prev;
+
+  if(funRetType.isBasic() && funRetType.asBasic().isVoid() && actRet.isNull()) {
+    return;
+  }
 
   if(!TypeCheckerManager::cmp(funRetType, actRet)) {
     addError(fndef->lattetype_->line_number, "Bad return type");
