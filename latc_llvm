@@ -4,6 +4,8 @@ fullname=$1
 filename="${fullname%.*}"
 directory="${fullname%/*}"
 
+llvm_version=$2
+
 mkdir -p foo/bar
 rm -f $1.ll
 
@@ -20,6 +22,6 @@ fi
 ./latc_llvm.bin < $1 > $filename.ll
 
 llvm-as -o $filename.bc.part $filename.ll
-llvm-link -o $filename.bc $filename.bc.part lib/runtime.bc
+llvm-link -o $filename.bc $filename.bc.part lib/runtime$2.bc
 exit 0 
 

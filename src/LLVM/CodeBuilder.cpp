@@ -116,16 +116,12 @@ void CodeBuilder::visitDecl(Decl *decl)
       } else if(StrType *type = dynamic_cast<StrType*>(decl->lattetype_)) {
         updateEnviroment(item->ident_, Object::createBasic(BasicObject::createString(registerData.getLastRegister())));
       } else if(ArrType *type = dynamic_cast<ArrType*>(decl->lattetype_)) {
-        addInstr(Instr::createCommentInstr("a"));
         Register sizeReg = registerData.getLastRegister();
         initArray(type->lattetype_, item->ident_);
         Register strPtr = registerData.getLastRegister();
         Register sizePtr = getArraySizePtr(strPtr);
-        addInstr(Instr::createCommentInstr("b "));
         addInstr(Instr::createStoreInstr(StoreInstr(sizeReg, sizePtr)));
-        addInstr(Instr::createCommentInstr("c "));
         Register arrPtr = getArrayPtr(strPtr);
-        addInstr(Instr::createCommentInstr("d "));
         Register allReg = getNextRegister(RegisterKind::createPtr(getRegisterKindFromLatteType(type->lattetype_)));
         addInstr(Instr::createAllocaInstr(AllocaInstr(AllocaInstrCount::createMultiple(sizeReg), allReg)));
         addInstr(Instr::createStoreInstr(StoreInstr(allReg, arrPtr)));
@@ -469,6 +465,10 @@ void CodeBuilder::visitInit(Init *init)
   */
 }
 
+void CodeBuilder::visitObjType(ObjType* p) {
+//TODO
+}
+
 void CodeBuilder::visitIntType(IntType *inttype)
 {
  
@@ -584,6 +584,21 @@ void CodeBuilder::visitENewArr(ENewArr *enewarr)
 
   enewarr->lattetype_->accept(this);
   enewarr->expr_->accept(this);
+
+}
+
+void CodeBuilder::visitEAtt(EAtt* eatt) {
+  Object o = getObjectByIdent(eatt->ident_);
+  //ewentualne przechodzenie po .
+
+  if(EVar* evar = dynamic_cast<EVar*>(eatt->expr_)) {
+    //atrybut
+    if(evar->ident_ == "length" && o.isArray()) {
+      getArraySizePtr(o.asArray());
+    }
+  } else if (true) {
+    
+  }
 
 }
 

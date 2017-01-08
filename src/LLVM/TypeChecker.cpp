@@ -256,6 +256,15 @@ void TypeChecker::visitCondElse(CondElse *condelse)
   }
 }
 
+void TypeChecker::visitObjType(ObjType* p) {
+//TODO
+}
+
+
+void TypeChecker::visitEAtt(EAtt* p) {
+//TODO
+}
+
 void TypeChecker::visitWhileStmnt(WhileStmnt *whilestmnt)
 {
   whilestmnt->expr_->accept(this);

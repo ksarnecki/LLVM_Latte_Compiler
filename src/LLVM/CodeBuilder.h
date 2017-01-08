@@ -53,10 +53,12 @@ public:
   void visitVoidType(VoidType* p);
   void visitFun(Fun* p);
   void visitEVar(EVar* p);
+  void visitObjType(ObjType* p);
   void visitELitInt(ELitInt* p);
   void visitELitTrue(ELitTrue* p);
   void visitELitFalse(ELitFalse* p);
   void visitENewArr(ENewArr *p);
+  void visitEAtt(EAtt* p);
   void visitEArr(EArr *p);
   void visitEApp(EApp* p);
   void visitEString(EString* p);

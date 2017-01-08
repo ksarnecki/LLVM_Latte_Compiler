@@ -1,5 +1,7 @@
 #include "Printer.h"
 
+#define LLVM_VERSION 34
+
 AnsiString Printer::renderFunctionArgument(const LLVMFunctionArgument& arg) {
   return renderRegisterKind(arg.getReg().getKind()) + " " + renderRegister(arg.getReg());
 }
@@ -195,8 +197,14 @@ AnsiString Printer::renderLoadInstr(const LoadInstr& load) {
   AnsiString ret;
   ret += renderRegister(load.getRet()) + " = ";
   ret += "load ";
+
+#if LLVM_VERSION >= 37
   ret += renderRegisterKind(load.getPtr().getKind().asPtr()) + ", ";
   ret += renderRegisterKind(load.getPtr().getKind()) + " ";
+#else
+  ret += renderRegisterKind(load.getPtr().getKind()) + " ";
+#endif
+  
   ret += renderRegister(load.getPtr());
   return ret;
 }
@@ -215,8 +223,14 @@ AnsiString Printer::renderGetElementPtrInstr(const GetElementPtrInstr& get) {
   AnsiString ret;
   ret += renderRegister(get.getRet()) + " = ";
   ret += "getelementptr ";
+
+#if LLVM_VERSION >= 37
   ret += renderRegisterKind(get.getPtr().getKind()) + ", ";
   ret += renderRegisterKind(get.getPtr().getKind()) + "* ";
+#else
+  ret += renderRegisterKind(get.getPtr().getKind()) + " ";
+#endif
+
   ret += renderRegister(get.getPtr());
   for(int i=0;i<get.getIndexes().Size();i++) {
     ret += ", " + renderRegisterKind(get.getIndexes()[i].getKind()) + " ";
