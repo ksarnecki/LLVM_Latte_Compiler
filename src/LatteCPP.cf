@@ -60,6 +60,8 @@ BoolType.      LatteType ::= "boolean" ;
 
 VoidType.      LatteType ::= "void" ;
 
+ObjType.       LatteType ::= Ident;
+
 ArrType.       LatteType ::= LatteType "[" "]";
 
 internal   Fun. LatteType ::= LatteType "(" [LatteType] ")" ;
@@ -68,7 +70,10 @@ separator  LatteType "," ;
 
 -- Expressions ---------------------------------------------
 
-EVar.      Expr6 ::= Ident ;
+
+EVar.      Expr6 ::= Ident;
+
+EAtt.      Expr6 ::= Ident "." Expr;
 
 ELitInt.   Expr6 ::= Integer ;
 
@@ -98,7 +103,7 @@ EAnd.      Expr1 ::= Expr2 "&&" Expr1 ;
 
 EOr.       Expr ::= Expr1 "||" Expr ;
 
-coercions  Expr 6 ;
+coercions  Expr 7 ;
 
 separator  Expr "," ;
 
