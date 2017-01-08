@@ -13,6 +13,7 @@ int main(int argc, char ** argv) {
   	TypeChecker typeChecker;
   	if(!typeChecker.check(parse_tree))
       return -1;
+    fprintf(stderr, "OK\n");
     CodeBuilder cb;
     LLVMProgram program = cb.compile(parse_tree);
     Opt::o0(program);

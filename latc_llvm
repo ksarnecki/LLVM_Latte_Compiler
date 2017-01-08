@@ -6,9 +6,20 @@ directory="${fullname%/*}"
 
 mkdir -p foo/bar
 rm -f $1.ll
-../latc_llvm.bin < $1 > $filename.ll
 
-if [ -f $filename.ll ]; then
-  llvm-as -o $filename.bc.part $filename.ll
-  llvm-link -o $filename.bc $filename.bc.part lib/runtime.bc 
+./latc_llvm.bin < $1 2> /dev/null 1>/dev/null
+
+if [ $? -ne 0 ]; then
+  >&2 echo "ERROR"
+  ./latc_llvm.bin < $1
+  exit -1
 fi
+
+>&2 echo "OK"
+
+./latc_llvm.bin < $1 > $filename.ll
+
+llvm-as -o $filename.bc.part $filename.ll
+llvm-link -o $filename.bc $filename.bc.part lib/runtime.bc
+exit 0 
+
