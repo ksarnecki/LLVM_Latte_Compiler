@@ -33,7 +33,7 @@ bnfc: src/LatteCPP.cf
 	cp src/LatteCPP.cf build/ && \
 	cd build && \
 	mkdir -p Common && \
-    bnfc -cpp -m -l LatteCPP.cf && \
+        ../bin/bnfc -cpp -m -l LatteCPP.cf && \
 	make && \
 	rm Test.o Printer.o TestLatteCPP && \
 	mv *.o Common/
@@ -48,4 +48,4 @@ data_make: $(CPP_FILES_GEN)
 clean:
 	rm -f *.bin
 	rm -f build/*.* build/Makefile
-	rm -f -r build/LLVM/* build/Common/*
+	rm -f -r build/LLVM/* build/Common/* build/Data/*

@@ -382,7 +382,7 @@ void TypeChecker::visitEApp(EApp *eapp)
     if(ftype.getArgs().Size()!=eapp->listexpr_->size()) {
       addError(eapp->line_number, AnsiString(eapp->ident_) + 
         " requires " + AnsiString(ftype.getArgs().Size()) + 
-        " args, " + AnsiString(eapp->listexpr_->size()) + " provided");
+        " args, " + AnsiString((int)eapp->listexpr_->size()) + " provided");
     } else {
       int ind = 0;
       for (ListExpr::iterator i = eapp->listexpr_->begin() ; i != eapp->listexpr_->end() ; ++i, ++ind)
