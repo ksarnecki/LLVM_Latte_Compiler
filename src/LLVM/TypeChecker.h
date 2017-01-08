@@ -135,7 +135,7 @@ void visitProgram(Program* p);
     }
     v->accept(this);
     if(errors.Size()>0) {
-      printf("ERROR\n");
+      fprintf(stderr, "ERROR\n");
       for(int i=0;i<errors.Size();i++) {
         printf("Type error at %d: %s\n", errors[i].getLine(), errors[i].getMsg().c_str());
       }
