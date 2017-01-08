@@ -5,10 +5,10 @@ filename="${fullname%.*}"
 directory="${fullname%/*}"
 
 mkdir -p foo/bar
-rm $1.ll
-../latc_llvm.bin < $1 > foo/bar/$filename.ll
+rm -f $1.ll
+../latc_llvm.bin < $1 > $filename.ll
 
-if [ -f foo/bar/$filename.ll ]; then
-  llvm-as -o foo/bar/$filename.bc.part foo/bar/$filename.ll
-  llvm-link -o foo/bar/$filename.bc foo/bar/$filename.bc.part lib/runtime.bc 
+if [ -f $filename.ll ]; then
+  llvm-as -o $filename.bc.part $filename.ll
+  llvm-link -o $filename.bc $filename.bc.part lib/runtime.bc 
 fi

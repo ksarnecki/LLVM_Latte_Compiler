@@ -13,7 +13,7 @@ LOBJ_FILES = $(shell find build/LLVM -type f -name '*.o')
 all: data LLVM_Compiler 
 
 LLVM_Compiler: $(OBJ_FILES)
-	$(CC) $(LFLAGS) -o llvm_latte_compiler.bin $(COBJ_FILES) $(LOBJ_FILES) $(DOBJ_FILES)
+	$(CC) $(LFLAGS) -o latc_llvm.bin $(COBJ_FILES) $(LOBJ_FILES) $(DOBJ_FILES)
 
 src/Data/Types.cpp: src/Data/Types.dd
 	bin/CodeGen -json < src/Data/Types.dd && \
