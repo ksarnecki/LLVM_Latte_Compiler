@@ -260,6 +260,9 @@ void TypeChecker::visitObjType(ObjType* p) {
 //TODO
 }
 
+void TypeChecker::visitForStmnt(ForStmnt* p) {
+  //TODO
+}
 
 void TypeChecker::visitEAtt(EAtt* p) {
 //TODO

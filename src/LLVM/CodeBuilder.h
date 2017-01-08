@@ -49,6 +49,7 @@ public:
   void visitIntType(IntType* p);
   void visitStrType(StrType* p);
   void visitBoolType(BoolType* p);
+  void visitForStmnt(ForStmnt* p);
   void visitArrType(ArrType *p);
   void visitVoidType(VoidType* p);
   void visitFun(Fun* p);
@@ -188,6 +189,7 @@ public:
   void initArray(const LatteType*, AnsiString);
   Register getArrayPtr(const Register&);
   Register getArraySizePtr(const Register&);
+
 };
 
 

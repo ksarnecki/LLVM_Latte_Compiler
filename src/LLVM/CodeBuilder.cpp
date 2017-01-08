@@ -386,6 +386,71 @@ void CodeBuilder::visitCondElse(CondElse *condelse)
   }
 }
 
+void CodeBuilder::visitForStmnt(ForStmnt *forstmnt) {
+
+  Ident looperIdent = Ident("loop_index");
+  Ident tabIdent = Ident(forstmnt->ident_2);
+  Ident iteratorIdent = Ident(forstmnt->ident_1);
+
+  Object o = getObjectByIdent(tabIdent);
+  if(!o.isArray())
+    throw Exception("[CodeBuilder::visitForStmnt] Internal error 1");
+  AnsiString strName = o.asArray().getKind().asPtr().asStruct();
+
+  ListItem* looperItems = new ListItem();
+  looperItems->push_back(new Init(looperIdent, new ELitInt(0)));
+  Decl* looperDecl = new Decl(new IntType(), looperItems);
+  /*  {
+        int looper_index = 0;
+        while(looper_index < arr.length) {
+          ident = arr[looper_index];
+          ...
+          ident++;
+        }
+      }
+  */
+
+  ListStmt* whileStmnts = new ListStmt();
+
+  ListItem* iteratorItems = new ListItem();
+  iteratorItems->push_back(new Init(iteratorIdent, new EArr(tabIdent, new EVar(looperIdent))));
+  
+  for(int i=0;i<program.getStructs().Size();i++)
+    if(program.getStructs()[i].getName()==strName) {
+      RegisterKind reg =program.getStructs()[i].getElems()[1].asPtr();
+
+      Decl* iteratorDecl;
+
+      if(reg.isValueI32()) {
+        iteratorDecl = new Decl(new IntType(), iteratorItems);
+      } else if(reg.isValueI1()) {
+        iteratorDecl = new Decl(new BoolType(), iteratorItems);
+      } else if(reg.isValueI32()) {
+        iteratorDecl = new Decl(new IntType(), iteratorItems);
+      } else 
+        throw Exception("[CodeBuilder::visitForStmnt] Internal error 2");
+      
+
+      //
+      whileStmnts->push_back(iteratorDecl);
+      whileStmnts->push_back(forstmnt->stmt_);
+      whileStmnts->push_back(new Incr(looperIdent));
+      //
+
+      WhileStmnt* whileStmnt = new WhileStmnt(new ERel(new EVar(looperIdent), new LTH(), new EAtt(tabIdent, new EVar(Ident("length"))) ), new BStmt(new Blk(whileStmnts)));
+
+
+      ListStmt* blkStmnts = new ListStmt();
+      blkStmnts->push_back(looperDecl);
+      blkStmnts->push_back(whileStmnt);
+
+      Blk* blk = new Blk(blkStmnts);
+      visitBlk(blk);
+      return;
+    }
+  throw Exception("[CodeBuilder::visitForStmnt] Internal error 3");
+}
+
 void CodeBuilder::visitWhileStmnt(WhileStmnt *whilestmnt)
 {
 
@@ -594,10 +659,14 @@ void CodeBuilder::visitEAtt(EAtt* eatt) {
   if(EVar* evar = dynamic_cast<EVar*>(eatt->expr_)) {
     //atrybut
     if(evar->ident_ == "length" && o.isArray()) {
-      getArraySizePtr(o.asArray());
-    }
+      Register r = getArraySizePtr(o.asArray());
+      Register outReg = getNextRegister(RegisterKind::createValueI32());
+      addInstr(Instr::createLoadInstr(LoadInstr(outReg, r)));
+      registerData.getLastRegister() = outReg;
+    } else
+      throw Exception("[CodeBuilder::visitEAtt] Internal error " + o.toJSON() + " " + evar->ident_);
   } else if (true) {
-    
+
   }
 
 }

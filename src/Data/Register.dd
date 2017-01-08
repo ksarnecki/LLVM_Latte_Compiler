@@ -21,7 +21,6 @@ RegisterKind = variant {
 	valueI1,
 	valueI8,
 	valueI32,
-	valueDouble,
 	ptr : RegisterKind,
 	constPtr : ConstPtr,
 	struct: string,

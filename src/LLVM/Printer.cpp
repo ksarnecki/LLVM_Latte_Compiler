@@ -184,10 +184,16 @@ AnsiString Printer::renderBinaryOperationInstr(const BinaryOperation& operation)
     ret += "  " + pomReg2 + " = alloca i32\n";
     ret += "  store i32 " + renderBinaryOperationArgument(operation.getLArg()) + ", i32* " + pomReg1 + "\n";
     ret += "  store i32 " + renderBinaryOperationArgument(operation.getRArg()) + ", i32* " + pomReg2 + "\n";
+
+#if LLVM_VERSION >= 37
     ret += "  " + pomReg3 + " = load i32, i32* " + pomReg1 +"\n";
     ret += "  " + pomReg4 + " = load i32, i32* " + pomReg2 +"\n";
-    ret += "  " + renderRegister(operation.getOutReg()) + " = srem i32 " + pomReg3 + ", " + pomReg4;
+#else
+    ret += "  " + pomReg3 + " = load i32* " + pomReg1 +"\n";
+    ret += "  " + pomReg4 + " = load i32* " + pomReg2 +"\n";
+#endif
 
+    ret += "  " + renderRegister(operation.getOutReg()) + " = srem i32 " + pomReg3 + ", " + pomReg4;
   }
   
   return ret;
@@ -204,7 +210,7 @@ AnsiString Printer::renderLoadInstr(const LoadInstr& load) {
 #else
   ret += renderRegisterKind(load.getPtr().getKind()) + " ";
 #endif
-  
+
   ret += renderRegister(load.getPtr());
   return ret;
 }

@@ -76,6 +76,7 @@ void visitProgram(Program* p);
   void visitELitTrue(ELitTrue* p);
   void visitELitFalse(ELitFalse* p);
   void visitEArr(EArr *p);
+  void visitForStmnt(ForStmnt* p);
   void visitObjType(ObjType* p);
   void visitENewArr(ENewArr *enewarr);
   void visitEApp(EApp* p);

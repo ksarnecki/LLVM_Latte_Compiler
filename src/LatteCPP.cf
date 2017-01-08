@@ -48,6 +48,8 @@ CondElse.  Stmt ::= "if" "(" Expr ")" Stmt "else" Stmt  ;
 
 WhileStmnt.     Stmt ::= "while" "(" Expr ")" Stmt ;
 
+ForStmnt.     Stmt ::= "for" "(" LatteType Ident ":" Ident ")" Stmt ;
+
 SExp.      Stmt ::= Expr  ";" ;
 
 -- LatteTypes ---------------------------------------------------

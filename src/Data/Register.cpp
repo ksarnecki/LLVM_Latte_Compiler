@@ -187,11 +187,10 @@ RegisterKindArray::~RegisterKindArray() {
 const int RegisterKind::_TypeValueI1 = 0;
 const int RegisterKind::_TypeValueI8 = 1;
 const int RegisterKind::_TypeValueI32 = 2;
-const int RegisterKind::_TypeValueDouble = 3;
-const int RegisterKind::_TypePtr = 4;
-const int RegisterKind::_TypeConstPtr = 5;
-const int RegisterKind::_TypeStruct = 6;
-const int RegisterKind::_TypeNull = 7;
+const int RegisterKind::_TypePtr = 3;
+const int RegisterKind::_TypeConstPtr = 4;
+const int RegisterKind::_TypeStruct = 5;
+const int RegisterKind::_TypeNull = 6;
 void RegisterKind::init(int type, void* ptr) {
   if (type==_TypeValueI1) {
     _type = type;
@@ -200,9 +199,6 @@ void RegisterKind::init(int type, void* ptr) {
     _type = type;
     _ptr = 0;
   } else if (type==_TypeValueI32) {
-    _type = type;
-    _ptr = 0;
-  } else if (type==_TypeValueDouble) {
     _type = type;
     _ptr = 0;
   } else if (type==_TypePtr) {
@@ -229,10 +225,6 @@ void RegisterKind::clean() {
     if (_ptr!=0)
       throw Exception("RegisterKind::clean()");
   } else if (_type==_TypeValueI32) {
-    _type = -1;
-    if (_ptr!=0)
-      throw Exception("RegisterKind::clean()");
-  } else if (_type==_TypeValueDouble) {
     _type = -1;
     if (_ptr!=0)
       throw Exception("RegisterKind::clean()");
@@ -272,9 +264,6 @@ bool RegisterKind::isValueI8() const {
 }
 bool RegisterKind::isValueI32() const {
   return _type==_TypeValueI32;
-}
-bool RegisterKind::isValueDouble() const {
-  return _type==_TypeValueDouble;
 }
 bool RegisterKind::isPtr() const {
   return _type==_TypePtr;
@@ -329,14 +318,12 @@ AnsiString RegisterKind::toJSON() const {
     else if (_type==2)
       _json += "0";
     else if (_type==3)
-      _json += "0";
-    else if (_type==4)
     _json += ((RegisterKind*) _ptr)->toJSON();
-    else if (_type==5)
+    else if (_type==4)
     _json += ((ConstPtr*) _ptr)->toJSON();
-    else if (_type==6)
+    else if (_type==5)
     _json += "\"" + JSONEscape::encode(*((AnsiString*) _ptr)) + "\"";
-    else if (_type==7)
+    else if (_type==6)
       _json += "0";
     else
       throw Exception("RegisterKind::toJSON(" + AnsiString(_type) + ")");
@@ -356,23 +343,21 @@ RegisterKind RegisterKind::fromJSON(AnsiString s) {
   } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("2")) {
     return RegisterKind::createValueI32();
   } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("3")) {
-    return RegisterKind::createValueDouble();
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
     if (s.Length()-ix-10-1<=0)
       throw Exception("RegisterKind::fromJSON");
     s = s.SubString(ix+10+1, s.Length()-ix-10-1);
     return RegisterKind::createPtr(RegisterKind::fromJSON(s));
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("5")) {
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("4")) {
     if (s.Length()-ix-10-1<=0)
       throw Exception("RegisterKind::fromJSON");
     s = s.SubString(ix+10+1, s.Length()-ix-10-1);
     return RegisterKind::createConstPtr(ConstPtr::fromJSON(s));
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("6")) {
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("5")) {
     if (s.Length()-ix-10-1<=0)
       throw Exception("RegisterKind::fromJSON");
     s = s.SubString(ix+10+1, s.Length()-ix-10-1);
     return RegisterKind::createStruct((s.Length()-2<0 ? throw Exception("String::FromJSON") : JSONEscape::decode(s.SubString(2, s.Length()-2))));
-  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("7")) {
+  } else if (s.Length()>ix+1+1 && s.SubString(ix+1, 1)==("6")) {
     return RegisterKind::createNull();
   }
   AnsiString variantName = "";
@@ -388,8 +373,6 @@ RegisterKind RegisterKind::fromJSON(AnsiString s) {
     return RegisterKind::createValueI8();
   } else if (variantName==("valueI32")) {
     return RegisterKind::createValueI32();
-  } else if (variantName==("valueDouble")) {
-    return RegisterKind::createValueDouble();
   } else if (variantName==("ptr")) {
     if (s.Length()-ix-1<=0)
       throw Exception("RegisterKind::fromJSON");
@@ -429,12 +412,6 @@ RegisterKind RegisterKind::createValueI8() {
 RegisterKind RegisterKind::createValueI32() {
   RegisterKind _value;
   _value._type = _TypeValueI32;
-  _value._ptr = 0;
-  return _value;
-}
-RegisterKind RegisterKind::createValueDouble() {
-  RegisterKind _value;
-  _value._type = _TypeValueDouble;
   _value._ptr = 0;
   return _value;
 }
